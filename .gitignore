@@ -1,0 +1,6 @@
+input/*
+outputs/*
+profile/*
+raw_input/*
+.vscode/*
+*.pyc

@@ -1,0 +1,131 @@
+# 这个文件负责实现oracle判定决策
+# - Iterate through all queries
+# - Always pick the correct model (Correct=True)
+# - If both models are correct, pick the "small" model
+# - If both models are wrong, pick the "large" model (since the decision is with respect to small)
+# - Compute:
+#   - Total and average (across all GSM tasks) latency:
+#     - Based on the model used by oracle, you add its runtime! obvious!
+#   - Total and average output tokens:
+#     - Based on the model used by oracle, you add its (length) output tokens!
+#   - Large model total and average output tokens:
+#     - We will use it later. In case Large is a GPT model, the tokens will be a proxy for the dollar cost, so we can use that for now! When the large model is used by oracle, you add its (length) output tokens!
+#   - Overall correctness:
+#     - How many of the total questions does the oracle get correct?
+#     - This might be less than 100% since we have cases where both models are wrong!
+#   - percentage_to_large compute how many times the oracle selects the large model!
+from typing import List, Dict, Any, Optional
+from copy import deepcopy
+
+class Oracle:
+    def __init__(self, config: Any):
+        self.models:List[str] = [model_info['name'] for model_info in config['Models'].values()]
+        # model size unit is "B" means Billian of params.
+        self.model_size = {
+            "Deepseek-v3.2-Exp-temp-0-chat": 685,
+            "Deepseek-v3.2-Exp-temp-0-reasoner": 685,
+            "GPT-4o-mini-temp-0": 8,
+            "o4-mini-temp-1": 0,
+            "Qwen3-0.6B-temp-0-en-thinking": 0.6,
+            "Qwen3-0.6B-temp-0-no-thinking": 0.6,
+            "Qwen3-14B-temp-0-en-thinking": 14,
+            "Qwen3-14B-temp-0-no-thinking": 14,
+        }
+    
+    # TODO: Need modify
+    def get_oracle(self, results: Dict[str, Any], latency_constraint) -> Dict[str, Any]:  # 延迟限制的单位为秒:second
+        # 对于每一个模型
+        judge_standards:Dict[str, Any] = {"correctness":{}, "latency":{}, "size":{}, "output_tokens":{}}
+        correct_model_list = deepcopy(self.models)
+        # step1. 填充判断依据 + 基于correctness进行筛选
+        for idx, model in enumerate(self.models, start=0):
+            result = results[model]
+            correctness = result["correctness"]
+            # If answer is correct, then keep this model
+            judge_standards["correctness"][model] = correctness
+            judge_standards["latency"][model] = result["runtime"]
+            judge_standards["size"][model] = self.model_size[model]
+            judge_standards["output_tokens"][model] = result["length_of_output_token_ids"]
+            if correctness == True:
+                continue
+            # If answer if incorrect, then remove this model
+            else:
+                correct_model_list.remove(model)
+        
+        # step2. 判断是否有 latency_constraint 这一限制
+        # without latency constraint
+        if latency_constraint is None:
+            # 对 judge_standards["size"] 进行排序, from small to large
+            judge_standards["size"] = dict(sorted(judge_standards["size"].items(), key=lambda item: item[1]))
+
+            # a.(All Wrong)If all models are unacceptable, choose the largest one.
+            if len(correct_model_list) == 0:
+                largest_model = list(judge_standards["size"].keys())[-1]
+                oracle_choice = largest_model
+            # b.(One Correct)If only one model is acceptable, choose it.    
+            elif len(correct_model_list) == 1:
+                oracle_choice = correct_model_list[0]
+            # c.(Lots Correct)If lots of models are acceptable, choose the smallest one.
+            elif len(correct_model_list) > 1:
+                smallest_model = list(judge_standards["size"].keys())[0]
+                oracle_choice = smallest_model
+            else:
+                raise ValueError("The oracle strategy can't do the judgement.")
+        # with latency constraint
+        elif isinstance(latency_constraint, (int, float)):
+            # 对 judge_standards["size"] 进行排序, from small to large
+            judge_standards["size"] = dict(sorted(judge_standards["size"].items(), key=lambda item: item[1]))
+            
+            # a.(All Wrong)If all models are unacceptable, choose the largest one.
+            if len(correct_model_list) == 0:
+                largest_model = list(judge_standards["size"].keys())[-1]
+                oracle_choice = largest_model
+            # b.(One Correct)If only one model is acceptable, choose it.    
+            elif len(correct_model_list) == 1:
+                oracle_choice = correct_model_list[0]
+            # c.(Lots Correct)If lots of models are acceptable, choose the smallest one.
+            elif len(correct_model_list) > 1:
+                latency_within_list = deepcopy(correct_model_list)
+                # 确保进入这个环节的每一个模型都给出了正确的回复
+                for idx, model in enumerate(correct_model_list, start=0):
+                    if judge_standards["correctness"][model] != True:
+                        judge_standards["correctness"].pop(model)
+                        judge_standards["latency"].pop(model)
+                        judge_standards["size"].pop(model)
+                        judge_standards["output_tokens"].pop(model)
+                        latency_within_list.remove(model)
+                
+                # 判断是否每一个都符合延迟限制，不符合延迟限制的直接移除.
+                for idx, model in enumerate(correct_model_list, start=0):
+                    if judge_standards["latency"][model] > latency_constraint:
+                        latency_within_list.remove(model)
+                
+                # a.(All Wrong)If all models are unacceptable, choose the largest one.
+                if len(latency_within_list) == 0:
+                    largest_model = list(judge_standards["size"].keys())[-1]
+                    oracle_choice = largest_model
+                # b.(One Correct)If only one model is acceptable, choose it.    
+                elif len(latency_within_list) == 1:
+                    oracle_choice = latency_within_list[0]
+                # c.(Lots Correct)If lots of models are acceptable, choose the smallest one.
+                elif len(latency_within_list) > 1:
+                    smallest_model = list(judge_standards["size"].keys())[0]
+                    oracle_choice = smallest_model
+                else:
+                    raise ValueError("The oracle strategy can't do the judgement.")
+            else:
+                raise ValueError("The oracle strategy can't do the judgement.")
+            
+        else:
+            raise ValueError("The type of latency_constraint should be None or float.")
+        
+        # 构建返回值:
+        oracle:Dict[str, Any] = {
+            "model": oracle_choice,
+            "correctness": judge_standards["correctness"][oracle_choice], 
+            "latency": judge_standards["latency"][oracle_choice],
+            "output_tokens": judge_standards["output_tokens"][oracle_choice],
+            }
+        
+        return oracle
+            
