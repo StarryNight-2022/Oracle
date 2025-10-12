@@ -28,11 +28,11 @@ from utils.oracle_router import Oracle
 def parse_args():
     parser = argparse.ArgumentParser(description="Process some parameters.")
     
-    # parser.add_argument('--config', type=str, default="./config/Qwen3-0.6B-en-think_AND_GPT-4o-mini.yaml",
-    #                     help="Specify the config file")
+    parser.add_argument('--config', type=str, default="./config/Qwen3-0.6B-en-think_AND_Deepseek-v3.2-Exp-chat.yaml",
+                        help="Specify the config file")
     
-    parser.add_argument('--config', type=str, default="./config/Qwen3-0.6B-no-think_AND_Deepseek-v3.2-Exp-chat.yaml",
-                    help="Specify the config file")
+    # parser.add_argument('--config', type=str, default="./config/development.yaml",
+    #                 help="Specify the config file")
     
     parser.add_argument('--latency_constraint', type=float, default=-1,
                     help="Specify the latency_constraint, default -1 means no latency constraint, Unit is seconds.")
