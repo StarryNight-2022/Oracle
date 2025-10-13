@@ -97,7 +97,7 @@ if __name__ == "__main__":
         dataset = load_dataset(benchmark, config_data["Benchmarks"][benchmark])
         print_sign(benchmark)
 
-        outputs_dir = os.path.join(runtime_dir, "outputs", f"{benchmark}")
+        outputs_dir = os.path.join(runtime_dir, "outputs", f"{benchmark}", "random")
         ensure_dir(outputs_dir)
         # Run random routing for 0%,10%,...,100%
         for percentage in range(0, 101, 10):
