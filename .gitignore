@@ -6,3 +6,4 @@ raw_input/*
 *.pyc
 *.xlsx
 *.vsdx
+*.tar.gz

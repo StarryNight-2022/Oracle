@@ -28,7 +28,7 @@ from utils.oracle_router import Oracle
 def parse_args():
     parser = argparse.ArgumentParser(description="Process some parameters.")
     
-    parser.add_argument('--config', type=str, default="./config/Qwen3-0.6B-en-think_AND_Deepseek-v3.2-Exp-chat.yaml",
+    parser.add_argument('--config', type=str, default="./config/Qwen3-0.6B-no-think_AND_Deepseek-v3.2-Exp-chat.yaml",
                         help="Specify the config file")
     
     # parser.add_argument('--config', type=str, default="./config/development.yaml",
