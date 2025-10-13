@@ -19,7 +19,7 @@ def parse_args():
     parser.add_argument('--benchmark', 
                         type=str, 
                         default="GSM8K",
-                        choices=["GSM8K"],
+                        choices=["GSM8K","MMLU"],
                         help="Specify the benchmark")
     
     parser.add_argument('--input_dir', 
@@ -81,11 +81,12 @@ if __name__ == "__main__":
         if is_folder_empty(model_path):    # 目录为空
             pass
         else:                              # 目录不为空
-            start_idx = record["Models"][model]         # 说明上次evaluate到这一条数据，最后约定一下如何标定下标以防冲突。
+            start_idx = record["Models"][model]["start_idx"]         # 说明上次evaluate到这一条数据，最后约定一下如何标定下标以防冲突。
             if start_idx >= len(dataset):
                 print(f"模型:{model}在基准测试集:{benchmark}上的evaluate已经完成！")
                 continue
             print(f"模型:{model}在基准测试集:{benchmark}上开始evaluate，evaluate数据下标从{start_idx+1}开始，到{len(dataset)}结束！")
+            accuracy = 0
             # 遍历数据集
             for idx, sample in tqdm(enumerate(dataset[start_idx:], start=start_idx+1)):
                 lable = parse_answer(benchmark, sample["answer"])
@@ -95,11 +96,15 @@ if __name__ == "__main__":
                 if str(profile_idx) == str(idx):
                     predict = parse_answer(benchmark, profile_result["full_response"])
                     add_correctness(file_path, predict, lable)
+                    if predict == lable:
+                        accuracy += 1
                 else:
                     raise ValueError(f"标准答案index:{idx}与profile输出的index:{profile_idx}不匹配")
-            record["Models"][model] = idx  # 更新evaluate到的数据下标
+            record["Models"][model]["start_idx"] = idx  # 更新evaluate到的数据下标
+            record["Models"][model]["accuracy"] = f"{accuracy/(len(dataset)-start_idx)*100:.2f}%"  # 写入Accuracy
             with open(record_file, 'w') as f:
                 yaml.dump(record, f)
-            print(f"模型:{model}在基准测试集:{benchmark}上完成evaluate！")      
+            print(f"模型:{model}在基准测试集:{benchmark}上完成evaluate！")
+            print(f"模型:{model}在基准测试集:{benchmark}上的Accuracy={accuracy/(len(dataset)-start_idx)*100:.2f}%")     
 
                 
