@@ -87,12 +87,14 @@ if __name__ == "__main__":
                 continue
             print(f"模型:{model}在基准测试集:{benchmark}上开始evaluate，evaluate数据下标从{start_idx+1}开始，到{len(dataset)}结束！")
             accuracy = 0
+            total_runtime = 0
             # 遍历数据集
             for idx, sample in tqdm(enumerate(dataset[start_idx:], start=start_idx+1)):
                 lable = parse_answer(benchmark, sample["answer"])
                 file_path = Path(os.path.join(model_path, f"train_{idx}.jsonl"))
                 profile_result = read_profile_result(file_path)
                 profile_idx = profile_result["index"]
+                total_runtime += float(profile_result["runtime"])
                 if str(profile_idx) == str(idx):
                     predict = parse_answer(benchmark, profile_result["full_response"])
                     add_correctness(file_path, predict, lable)
@@ -102,9 +104,14 @@ if __name__ == "__main__":
                     raise ValueError(f"标准答案index:{idx}与profile输出的index:{profile_idx}不匹配")
             record["Models"][model]["start_idx"] = idx  # 更新evaluate到的数据下标
             record["Models"][model]["accuracy"] = f"{accuracy/(len(dataset)-start_idx)*100:.2f}%"  # 写入Accuracy
+            record["Models"][model]["total_runtime"] = f"{total_runtime:.2f} seconds"  # 写入Total_runtime
+            record["Models"][model]["avg_runtime"] = f"{total_runtime/(len(dataset)-start_idx):.2f} seconds"  # 写入Avg_runtime
+            # 将record写回yaml文件
             with open(record_file, 'w') as f:
                 yaml.dump(record, f)
             print(f"模型:{model}在基准测试集:{benchmark}上完成evaluate！")
-            print(f"模型:{model}在基准测试集:{benchmark}上的Accuracy={accuracy/(len(dataset)-start_idx)*100:.2f}%")     
+            print(f"模型:{model}在基准测试集:{benchmark}上的Accuracy={accuracy/(len(dataset)-start_idx)*100:.2f}%")
+            print(f"模型:{model}在基准测试集:{benchmark}上的Total_runtime={total_runtime:.2f} seconds")
+            print(f"模型:{model}在基准测试集:{benchmark}上的Avg_runtime={total_runtime/(len(dataset)-start_idx):.2f} seconds") 
 
                 
