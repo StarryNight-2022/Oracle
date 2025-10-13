@@ -93,7 +93,7 @@ if __name__ == "__main__":
         dataset = load_dataset(benchmark, config_data["Benchmarks"][benchmark])
         print_sign(benchmark)
         
-        outputs_dir = os.path.join(runtime_dir, "outputs", f"{benchmark}")
+        outputs_dir = os.path.join(runtime_dir, "outputs", f"{benchmark}", "oracle")
         ensure_dir(outputs_dir)
         if latency_constraint == None:
             output_file = (((str(args.config)).split("/")[-1]).split(".yaml")[0]) + "_no-latency-constraint" + ".jsonl"
