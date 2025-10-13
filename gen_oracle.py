@@ -31,11 +31,8 @@ def parse_args():
     parser.add_argument('--config', type=str, default="./config/Qwen3-0.6B-no-think_AND_Deepseek-v3.2-Exp-chat.yaml",
                         help="Specify the config file")
     
-    # parser.add_argument('--config', type=str, default="./config/development.yaml",
-    #                 help="Specify the config file")
-    
     parser.add_argument('--latency_constraint', type=float, default=-1,
-                    help="Specify the latency_constraint, default -1 means no latency constraint, Unit is seconds.")
+                        help="Specify the latency_constraint, default -1 means no latency constraint, Unit is seconds.")
 
     args = parser.parse_args()
     return args
@@ -141,5 +138,42 @@ if __name__ == "__main__":
             print(f"{model} Total Output Tokens: {total_tokens_each[model]}")
             print(f"{model} Average Output Tokens: {total_tokens_each[model]/times[model]:.2f}")
 
-        print(f"已完成 {benchmark} 的 Oracle 结果，保存在：{os.path.join(outputs_dir, output_file)}")
+        # Build a JSON-serializable summary and write it to a .summary.json file
+        summary = {
+            "benchmark": benchmark,
+            "config": str(args.config),
+            "latency_constraint": latency_constraint,
+            "total_queries": total,
+            "model_selection_percent": {},
+            "accuracy": accuracy,
+            "total_latency": sum(total_latency_each.values()),
+            "average_latency_per_query": (sum(total_latency_each.values())/total) if total > 0 else None,
+            "model_latency": {},
+            "total_output_tokens": sum(total_tokens_each.values()),
+            "average_output_tokens_per_query": (sum(total_tokens_each.values())/total) if total > 0 else None,
+            "model_tokens": {}
+        }
+
+        for model in Models:
+            pct = (times[model]/total)*100 if total > 0 else None
+            avg_latency = (total_latency_each[model]/times[model]) if times[model] > 0 else None
+            avg_tokens = (total_tokens_each[model]/times[model]) if times[model] > 0 else None
+            summary["model_selection_percent"][model] = pct
+            summary["model_latency"][model] = {
+                "total": total_latency_each[model],
+                "average": avg_latency
+            }
+            summary["model_tokens"][model] = {
+                "total": total_tokens_each[model],
+                "average": avg_tokens
+            }
+
+        summary_path = os.path.join(outputs_dir, output_file + ".summary.json")
+        try:
+            with open(summary_path, 'w', encoding='utf-8') as sf:
+                json.dump(summary, sf, ensure_ascii=False, indent=2)
+            print(f"已完成 {benchmark} 的 Oracle 结果，保存在：{os.path.join(outputs_dir, output_file)}")
+            print(f"统计概要已保存到：{summary_path}")
+        except Exception:
+            print("写入 summary JSON 时发生错误:\n", traceback.format_exc())
         

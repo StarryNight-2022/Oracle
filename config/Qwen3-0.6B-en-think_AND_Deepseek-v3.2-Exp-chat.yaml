@@ -8,6 +8,6 @@ Models:
     profile_result:
       GSM8K: "/home/ouyk/project/ICDCS/Oracle/input/GSM8K/Qwen3-0.6B-temp-0-en-thinking"
 Benchmarks:
-  GSM8K: "/home/ouyk/project/ICDCS/Oracle/profile/GSM8k/grade-school-math/grade_school_math/data/train.jsonl"
+  GSM8K: "/home/ouyk/project/ICDCS/Oracle/profile/GSM8K/data/train.jsonl"
 Output:
   path: "./output"
