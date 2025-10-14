@@ -1,8 +1,8 @@
 Models:
   model_0:
-    name: "o4-mini-temp-1"
+    name: "GPT-4o-mini-temp-0"
     profile_result: 
-      GSM8K: "/home/ouyk/project/ICDCS/Oracle/input/GSM8K/o4-mini-temp-1"
+      GSM8K: "/home/ouyk/project/ICDCS/Oracle/input/GSM8K/GPT-4o-mini-temp-0"
   model_1:
     name: "Qwen3-0.6B-temp-0-no-thinking"
     profile_result:
