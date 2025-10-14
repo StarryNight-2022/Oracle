@@ -112,6 +112,5 @@ if __name__ == "__main__":
             print(f"模型:{model}在基准测试集:{benchmark}上完成evaluate！")
             print(f"模型:{model}在基准测试集:{benchmark}上的Accuracy={accuracy/(len(dataset)-start_idx)*100:.2f}%")
             print(f"模型:{model}在基准测试集:{benchmark}上的Total_runtime={total_runtime:.2f} seconds")
-            print(f"模型:{model}在基准测试集:{benchmark}上的Avg_runtime={total_runtime/(len(dataset)-start_idx):.2f} seconds") 
+            print(f"模型:{model}在基准测试集:{benchmark}上的Avg_runtime={total_runtime/(len(dataset)-start_idx):.2f} seconds")
 
-                
