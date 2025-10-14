@@ -89,7 +89,7 @@ def get_metric_for_model(summary: Dict[str, Any], model: str):
 
 
 def plot_metric(x_vals: List[float], y_vals: List[float], oracle_x: float, oracle_y: float, xlabel: str, ylabel: str, title: str, out_path: str):
-    plt.figure(figsize=(7, 5))
+    plt.figure(figsize=(8, 6))
     # plot random points
     plt.scatter(x_vals, y_vals, color='tab:blue', alpha=0.6, label='random')
     # if many points, draw a faint line connecting them (sorted by x)
@@ -111,7 +111,7 @@ def plot_metric(x_vals: List[float], y_vals: List[float], oracle_x: float, oracl
     plt.grid(True, linestyle='--', alpha=0.3)
     plt.legend()
     plt.tight_layout()
-    plt.savefig(out_path)
+    plt.savefig(out_path, dpi=300)
     plt.close()
 
 
