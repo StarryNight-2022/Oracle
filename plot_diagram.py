@@ -22,6 +22,16 @@ import yaml
 
 import matplotlib.pyplot as plt
 
+model_size = {
+    "Deepseek-v3.2-Exp-temp-0-chat": 685,
+    "Deepseek-v3.2-Exp-temp-0-reasoner": 685,
+    "GPT-4o-mini-temp-0": 8,
+    "o4-mini-temp-1": 0,
+    "Qwen3-0.6B-temp-0-en-thinking": 0.6,
+    "Qwen3-0.6B-temp-0-no-thinking": 0.6,
+    "Qwen3-14B-temp-0-en-thinking": 14,
+    "Qwen3-14B-temp-0-no-thinking": 14,
+}
 
 def load_summary(path: str) -> Dict[str, Any]:
     with open(path, 'r', encoding='utf-8') as f:
@@ -110,13 +120,9 @@ def main():
     parser.add_argument('--config', type=str, default="./config/Qwen3-0.6B-no-think_AND_Deepseek-v3.2-Exp-chat.yaml",
                         help="Specify the config file")
     parser.add_argument('--benchmark', type=str, default="GSM8K", 
-                        help='Benchmark name to load summaries for')
-    parser.add_argument('--model', type=str, default="Deepseek-v3.2-Exp-temp-0-chat", 
-                        help='Model name to extract statistics for (overrides config default)')
+                        choices=["GSM8K","MMLU"], help='Benchmark name to load summaries for')
     parser.add_argument('--latency_constraint', type=float, default=-1, 
                         help='Latency constraint used when generating summaries (use -1 for none)')
-    parser.add_argument('--out_dir', type=str, default=None, 
-                        help='Directory to save plots (defaults to outputs/<benchmark>/plots)')
     args = parser.parse_args()
 
     # load config yaml to derive output paths and available models
@@ -132,7 +138,9 @@ def main():
     if args.benchmark not in Benchmarks:
         raise ValueError(f"benchmark '{args.benchmark}' 不在配置文件中: {Benchmarks}")
 
-    model_name = args.model if args.model else (Models[0] if Models else None)
+    # 挑选两个模型中model_size最大的那个
+    model_name = sorted(Models, key=lambda m: model_size.get(m, 0), reverse=True)[0] if Models else None
+    print(f"选择模型 '{model_name}' 进行绘图")
     if model_name is None:
         raise ValueError('未指定模型且配置文件中没有模型信息')
     if model_name not in Models:
@@ -140,13 +148,10 @@ def main():
 
     # determine output directory: prefer explicit arg, otherwise outputs/<benchmark>/plots
     runtime_dir = os.path.dirname(os.path.abspath(__file__))
-    if args.out_dir:
-        out_dir = args.out_dir
-    else:
-        out_dir = os.path.join(runtime_dir, 'outputs', args.benchmark, 'plots')
-    ensure_out_dir(out_dir)
 
-    runtime_dir = os.path.dirname(os.path.abspath(__file__))
+    out_dir = os.path.join(runtime_dir, 'outputs', args.benchmark, 'plots', (str(args.config).split("/")[-1]).split(".yaml")[0])
+    ensure_out_dir(out_dir)
+    print(f"输出目录: {out_dir}")
     latency_constraint = args.latency_constraint
     if latency_constraint == -1:
         latency_constraint = None
