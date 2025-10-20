@@ -28,7 +28,7 @@ from utils.oracle_router import Oracle
 def parse_args():
     parser = argparse.ArgumentParser(description="Process some parameters.")
     
-    parser.add_argument('--config', type=str, default="./config/plot/Qwen3-0.6B-en-think_AND_Deepseek-v3.2-Exp-reasoner.yaml",
+    parser.add_argument('--config', type=str, default="./config/plot/oracle/Qwen3-0.6B-en-think_AND_Deepseek-v3.2-Exp-reasoner.yaml",
                         help="Specify the config file")
     
     parser.add_argument('--latency_constraint', type=float, default=-1,
@@ -93,7 +93,7 @@ if __name__ == "__main__":
         dataset = load_dataset(benchmark, config_data["Benchmarks"][benchmark])
         print_sign(benchmark)
         
-        outputs_dir = os.path.join(runtime_dir, "outputs", f"{benchmark}", "oracle")
+        outputs_dir = os.path.join(runtime_dir, "outputs", f"{benchmark}", "oracle", f"strategy_{args.choice}")
         ensure_dir(outputs_dir)
         if latency_constraint == None:
             output_file = (((str(args.config)).split("/")[-1]).split(".yaml")[0]) + "_no-latency-constraint" + ".jsonl"

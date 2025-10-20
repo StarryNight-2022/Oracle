@@ -124,6 +124,7 @@ def remove_outliers(x_vals, y_vals, z_threshold=3.0):
 
     return filtered_x, filtered_y, removed
 
+# 示例：python plot_scatter.py --benchmark GSM8K --remove-outliers --z-threshold 3
 def main():
     parser = argparse.ArgumentParser()
     parser.add_argument('--config', type=str, default="./config/plot/scatter/Qwen3-0.6B-no-think_AND_Qwen3-14B-no-think.yaml",

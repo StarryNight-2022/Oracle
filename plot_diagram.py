@@ -123,6 +123,8 @@ def main():
                         choices=["GSM8K","MMLU"], help='Benchmark name to load summaries for')
     parser.add_argument('--latency_constraint', type=float, default=-1, 
                         help='Latency constraint used when generating summaries (use -1 for none)')
+    parser.add_argument('--choice', type=int, default=0,
+                    help="Specify the oracle strategy with latency constraint.")
     args = parser.parse_args()
 
     # load config yaml to derive output paths and available models
@@ -149,7 +151,7 @@ def main():
     # determine output directory: prefer explicit arg, otherwise outputs/<benchmark>/plots
     runtime_dir = os.path.dirname(os.path.abspath(__file__))
 
-    out_dir = os.path.join(runtime_dir, 'outputs', args.benchmark, 'plots', 'oracle', (str(args.config).split("/")[-1]).split(".yaml")[0])
+    out_dir = os.path.join(runtime_dir, 'outputs', args.benchmark, 'plots', 'oracle', f"strategy_{args.choice}", (str(args.config).split("/")[-1]).split(".yaml")[0])
     ensure_out_dir(out_dir)
     print(f"输出目录: {out_dir}")
     latency_constraint = args.latency_constraint
@@ -157,7 +159,7 @@ def main():
         latency_constraint = None
 
     # construct oracle summary path using same naming rule as gen_oracle.py
-    oracle_outputs_dir = os.path.join(runtime_dir, "outputs", args.benchmark, "oracle")
+    oracle_outputs_dir = os.path.join(runtime_dir, "outputs", args.benchmark, "oracle", f"strategy_{args.choice}")
     config_basename = (str(args.config).split("/")[-1]).split(".yaml")[0]
     if latency_constraint is None:
         oracle_output_file = config_basename + "_no-latency-constraint" + ".jsonl"

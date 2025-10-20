@@ -54,7 +54,15 @@ class Oracle:
         
         return oracle
     
-    def strategy_0(self, results):
+    def strategy_0(self, results: Dict[str, Any]):
+        # 仅选取results中的部分字段(correctness, runtime, length_of_output_token_ids)写入raw中，并加入model_size
+        raw: Dict[str, Any] = {}
+        for model in list(results.keys()):
+            raw[model] = {}  # 先初始化内层字典
+            raw[model]["correctness"] = results[model]["correctness"]
+            raw[model]["latency"] = results[model]["runtime"]
+            raw[model]["output_tokens"] = results[model]["length_of_output_token_ids"]
+            raw[model]["model_size"] = self.model_size[model]
         # 对于每一个模型
         judge_standards:Dict[str, Any] = {"correctness":{}, "latency":{}, "size":{}, "output_tokens":{}}
         correct_model_list = deepcopy(self.models)
@@ -92,6 +100,7 @@ class Oracle:
         
         # 构建返回值:
         oracle:Dict[str, Any] = {
+            "raw": raw,
             "model": oracle_choice,
             "correctness": judge_standards["correctness"][oracle_choice], 
             "latency": judge_standards["latency"][oracle_choice],
@@ -101,7 +110,15 @@ class Oracle:
         return oracle
     
     #NOTE: Did some modifications based on strategy without latency constraint
-    def strategy_1(self, results, latency_constraint: Union[float, int]):
+    def strategy_1(self, results: Dict[str, Any], latency_constraint: Union[float, int]):
+        # 仅选取results中的部分字段(correctness, runtime, length_of_output_token_ids)写入raw中，并加入model_size
+        raw: Dict[str, Any] = {}
+        for model in list(results.keys()):
+            raw[model] = {}  # 先初始化内层字典
+            raw[model]["correctness"] = results[model]["correctness"]
+            raw[model]["latency"] = results[model]["runtime"]
+            raw[model]["output_tokens"] = results[model]["length_of_output_token_ids"]
+            raw[model]["model_size"] = self.model_size[model]
         # 对于每一个模型
         judge_standards:Dict[str, Any] = {"correctness":{}, "latency":{}, "size":{}, "output_tokens":{}}
         correct_model_list = deepcopy(self.models)
@@ -166,6 +183,7 @@ class Oracle:
         
         # 构建返回值:
         oracle:Dict[str, Any] = {
+            "raw": raw,
             "model": oracle_choice,
             "correctness": judge_standards["correctness"][oracle_choice], 
             "latency": judge_standards["latency"][oracle_choice],
@@ -175,7 +193,15 @@ class Oracle:
         return oracle
     
     # NOTE: Make the Latency constraint higher privilege than correctness
-    def strategy_2(self, results, latency_constraint: Union[float, int]):
+    def strategy_2(self, results:Dict[str, Any], latency_constraint: Union[float, int]):
+        # 仅选取results中的部分字段(correctness, runtime, length_of_output_token_ids)写入raw中，并加入model_size
+        raw: Dict[str, Any] = {}
+        for model in list(results.keys()):
+            raw[model] = {}  # 先初始化内层字典
+            raw[model]["correctness"] = results[model]["correctness"]
+            raw[model]["latency"] = results[model]["runtime"]
+            raw[model]["output_tokens"] = results[model]["length_of_output_token_ids"]
+            raw[model]["model_size"] = self.model_size[model]
         # 对于每一个模型
         judge_standards:Dict[str, Any] = {"correctness":{}, "latency":{}, "size":{}, "output_tokens":{}}
         latency_within_list = deepcopy(self.models)
@@ -239,15 +265,18 @@ class Oracle:
         # Represent response timeout
         if oracle_choice == "Timeout":
             # Assuming the router chooses the fastest model, but still timeout.
+            judge_standards["latency"] = dict(sorted(judge_standards["latency"].items(), key=lambda item: item[1]))
             fastest_model = list(judge_standards["latency"].keys())[0]
             oracle:Dict[str, Any] = {
+                "raw": raw,
                 "model": fastest_model,
-                "correctness": judge_standards["correctness"][fastest_model], 
+                "correctness": False,          # Cause timeout, don't get answer from the router. So, correctness = Fasle
                 "latency": latency_constraint, # Cause timeout, the latency after routed should be the specific latency-constraint 
-                "output_tokens": 0,            # Cause timeout, don't get answer from the router. So, without 
+                "output_tokens": 0,            # Cause timeout, don't get answer from the router. So, output_tokens = 0
                 }
         else:
             oracle:Dict[str, Any] = {
+                "raw": raw,
                 "model": oracle_choice,
                 "correctness": judge_standards["correctness"][oracle_choice], 
                 "latency": judge_standards["latency"][oracle_choice],
