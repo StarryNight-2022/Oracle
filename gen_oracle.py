@@ -33,6 +33,9 @@ def parse_args():
     
     parser.add_argument('--latency_constraint', type=float, default=-1,
                         help="Specify the latency_constraint, default -1 means no latency constraint, Unit is seconds.")
+    
+    parser.add_argument('--choice', type=int, default=0,
+                        help="Specify the oracle strategy with latency constraint.")
 
     args = parser.parse_args()
     return args
@@ -111,7 +114,7 @@ if __name__ == "__main__":
                 for model in config_data["Models"].keys():
                     results[config_data['Models'][model]["name"]] = read_jsonl(config_data, benchmark, model, idx)
                 # Call oracle judging func, return oracle: Dict[str, Any]
-                oracle = Oracle_Judge.get_oracle(results, latency_constraint)       # here the oracle choice
+                oracle = Oracle_Judge.get_oracle(results, latency_constraint, choice=args.choice)       # here the oracle choice
                 results = {}    # 清空
                 
                 # Collect Metrics

@@ -16,6 +16,9 @@ def parse_args():
     return args
 
 if __name__ == "__main__":
+    # latency_constraint = -1
+    latency_constraint = 5.0
+    
     args = parse_args()
     benchmark = str(args.benchmark)
     
@@ -28,6 +31,6 @@ if __name__ == "__main__":
 
     os.chdir("/home/ouyk/project/ICDCS/Oracle")
     for config_file in config_file_list:
-        os.system(f"python3 gen_oracle.py --config {config_file} --latency_constraint -1")
-        os.system(f"python gen_random.py --config {config_file}")
-        os.system(f"python plot_diagram.py --config {config_file} --benchmark {benchmark}")
+        os.system(f"python3 gen_oracle.py --config {config_file} --latency_constraint {latency_constraint} --choice 0")
+        # os.system(f"python gen_random.py --config {config_file}")
+        os.system(f"python plot_diagram.py --config {config_file} --latency_constraint {latency_constraint} --benchmark {benchmark}")
