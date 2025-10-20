@@ -149,7 +149,7 @@ def main():
     # determine output directory: prefer explicit arg, otherwise outputs/<benchmark>/plots
     runtime_dir = os.path.dirname(os.path.abspath(__file__))
 
-    out_dir = os.path.join(runtime_dir, 'outputs', args.benchmark, 'plots', (str(args.config).split("/")[-1]).split(".yaml")[0])
+    out_dir = os.path.join(runtime_dir, 'outputs', args.benchmark, 'plots', 'oracle', (str(args.config).split("/")[-1]).split(".yaml")[0])
     ensure_out_dir(out_dir)
     print(f"输出目录: {out_dir}")
     latency_constraint = args.latency_constraint

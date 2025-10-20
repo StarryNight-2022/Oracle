@@ -1,5 +1,8 @@
 input/*
 outputs/*
+profile/Chatbot-Arena/data/*
+profile/Chatbot-Arena/outputs/*
+profile/Chatbot-Arena/scripts/dev/*
 profile/GSM8K/data/*
 profile/GSM8K/outputs/*
 profile/GSM8K/scripts/dev/*
@@ -10,6 +13,7 @@ profile/MMLU/scripts/dev/*
 profile/MT-Bench/data/*
 profile/MT-Bench/outputs/*
 profile/MT-Bench/scripts/dev/*
+profile/MT-Bench/scripts/run/start_vllm_server.sh
 raw_input/*
 .vscode/*
 *.pyc
