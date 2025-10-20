@@ -176,10 +176,7 @@ def main():
     random_summaries = []
     # percentages 0,10,...,100
     for percentage in range(0, 101, 10):
-        if latency_constraint is None:
-            random_output_file = config_basename + f"_random_{percentage}percent_no-latency" + ".jsonl"
-        else:
-            random_output_file = config_basename + f"_random_{percentage}percent_{latency_constraint}s-latency" + ".jsonl"
+        random_output_file = config_basename + f"_random_{percentage}percent" + ".jsonl"
         summary_path = os.path.join(random_outputs_dir, random_output_file + ".summary.json")
         if os.path.exists(summary_path):
             try:

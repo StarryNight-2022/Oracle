@@ -32,9 +32,6 @@ def parse_args():
     parser.add_argument('--config', type=str, default="./config/Qwen3-0.6B-no-think_AND_Deepseek-v3.2-Exp-chat.yaml",
                         help="Specify the config file")
 
-    parser.add_argument('--latency_constraint', type=float, default=-1,
-                        help="Specify the latency_constraint, default -1 means no latency constraint, Unit is seconds.")
-
     args = parser.parse_args()
     return args
 
@@ -83,10 +80,6 @@ if __name__ == "__main__":
     # ---------------------------- Initialize Random router class ------------------------
     Random_Judge = RandomRouter()
 
-    latency_constraint = args.latency_constraint
-    if latency_constraint == -1:
-        latency_constraint = None
-
     # ------------------------------------ Main Iteration ---------------------------------
     results: Dict[str, Any] = {}
     # Iteration for benchmarks
@@ -98,12 +91,7 @@ if __name__ == "__main__":
         ensure_dir(outputs_dir)
         # Run random routing for 0%,10%,...,100%
         for percentage in range(0, 101, 10):
-            if latency_constraint == None:
-                output_file = (((str(args.config)).split("/")[-1]).split(".yaml")[0]) + f"_random_{percentage}percent_no-latency" + ".jsonl"
-            elif type(latency_constraint) == float:
-                output_file = (((str(args.config)).split("/")[-1]).split(".yaml")[0]) + f"_random_{percentage}percent_{latency_constraint}s-latency" + ".jsonl"
-            else:
-                raise ValueError("latency_constraint must be None or float.")
+            output_file = (((str(args.config)).split("/")[-1]).split(".yaml")[0]) + f"_random_{percentage}percent" + ".jsonl"
 
             times = {model: 0 for model in Models}
             accuracy = 0
@@ -157,7 +145,6 @@ if __name__ == "__main__":
             summary = {
                 "benchmark": benchmark,
                 "config": str(args.config),
-                "latency_constraint": latency_constraint,
                 "total_queries": total,
                 "model_selection_percent": {},
                 "accuracy": accuracy,
@@ -187,7 +174,7 @@ if __name__ == "__main__":
             try:
                 with open(summary_path, 'w', encoding='utf-8') as sf:
                     json.dump(summary, sf, ensure_ascii=False, indent=2)
-                print(f"已完成 {benchmark} 的 Oracle 结果，保存在：{os.path.join(outputs_dir, output_file)}")
+                print(f"已完成 {benchmark} 的 Random 结果，保存在：{os.path.join(outputs_dir, output_file)}")
                 print(f"统计概要已保存到：{summary_path}")
             except Exception:
                 print("写入 summary JSON 时发生错误:\n", traceback.format_exc())
