@@ -88,6 +88,7 @@ if __name__ == "__main__":
             print(f"模型:{model}在基准测试集:{benchmark}上开始evaluate，evaluate数据下标从{start_idx+1}开始，到{len(dataset)}结束！")
             accuracy = 0
             total_runtime = 0
+            total_tokens = 0
             # 遍历数据集
             for idx, sample in tqdm(enumerate(dataset[start_idx:], start=start_idx+1)):
                 lable = parse_answer(benchmark, sample["answer"])
@@ -95,6 +96,7 @@ if __name__ == "__main__":
                 profile_result = read_profile_result(file_path)
                 profile_idx = profile_result["index"]
                 total_runtime += float(profile_result["runtime"])
+                total_tokens += int(profile_result["length_of_output_token_ids"])
                 if str(profile_idx) == str(idx):
                     predict = parse_answer(benchmark, profile_result["full_response"])
                     add_correctness(file_path, predict, lable)
@@ -106,6 +108,8 @@ if __name__ == "__main__":
             record["Models"][model]["accuracy"] = f"{accuracy/(len(dataset)-start_idx)*100:.2f}%"  # 写入Accuracy
             record["Models"][model]["total_runtime"] = f"{total_runtime:.2f} seconds"  # 写入Total_runtime
             record["Models"][model]["avg_runtime"] = f"{total_runtime/(len(dataset)-start_idx):.2f} seconds"  # 写入Avg_runtime
+            record["Models"][model]["total_tokens"] = f"{total_tokens} tokens" # 写入Total_tokens
+            record["Models"][model]["avg_tokens"] = f"{total_tokens/(len(dataset)-start_idx):.2f} tokens" # 写入Avg_tokens
             # 将record写回yaml文件
             with open(record_file, 'w') as f:
                 yaml.dump(record, f)
@@ -113,4 +117,6 @@ if __name__ == "__main__":
             print(f"模型:{model}在基准测试集:{benchmark}上的Accuracy={accuracy/(len(dataset)-start_idx)*100:.2f}%")
             print(f"模型:{model}在基准测试集:{benchmark}上的Total_runtime={total_runtime:.2f} seconds")
             print(f"模型:{model}在基准测试集:{benchmark}上的Avg_runtime={total_runtime/(len(dataset)-start_idx):.2f} seconds")
+            print(f"模型:{model}在基准测试集:{benchmark}上的Total_tokens={total_tokens:.2f} tokens")
+            print(f"模型:{model}在基准测试集:{benchmark}上的Avg_tokens={total_tokens/(len(dataset)-start_idx):.2f} tokens")
 
