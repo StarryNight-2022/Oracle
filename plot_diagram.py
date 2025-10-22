@@ -19,6 +19,8 @@ import os
 from pathlib import Path
 from typing import List, Dict, Any
 import yaml
+import pandas as pd
+import numpy as np
 
 import matplotlib.pyplot as plt
 
@@ -114,10 +116,28 @@ def plot_metric(x_vals: List[float], y_vals: List[float], oracle_x: float, oracl
     plt.savefig(out_path, dpi=300)
     plt.close()
 
+# TODO: 绘制表格
+def plot_chart(data: pd.DataFrame, out_path: str):
+    # 使用styler来渲染表格，它会自动处理索引
+    fig, ax = plt.subplots(figsize=(8, len(data)*0.5 + 1))
+    ax.axis('off')
+    
+    # 使用pandas的styler来创建表格
+    table = ax.table(cellText=np.vstack([data.columns, data.values]),
+                     rowLabels=['Models (small->big)'] + data.index.tolist(),
+                     cellLoc='center',
+                     loc='center')
+    
+    table.auto_set_font_size(False)
+    table.set_fontsize(10)
+    table.scale(1, 1.5)
+    plt.tight_layout()
+    plt.savefig(out_path, dpi=300)
+    plt.close()
 
 def main():
     parser = argparse.ArgumentParser()
-    parser.add_argument('--config', type=str, default="./config/Qwen3-0.6B-no-think_AND_Deepseek-v3.2-Exp-chat.yaml",
+    parser.add_argument('--config', type=str, default="./config/plot/oracle/Qwen3-0.6B-no-think_AND_Deepseek-v3.2-Exp-reasoner.yaml",
                         help="Specify the config file")
     parser.add_argument('--benchmark', type=str, default="GSM8K", 
                         choices=["GSM8K","MMLU"], help='Benchmark name to load summaries for')
@@ -199,6 +219,33 @@ def main():
             random_acc.append(acc if acc is not None else float('nan'))
             random_lat.append(lat if lat is not None else float('nan'))
             random_tokens.append(tok if tok is not None else float('nan'))
+            
+    # Chart: construct a pd.DataFrame to storage data of a chart
+    # 基于model_size对Models排序，由小到大
+    out0 = os.path.join(out_dir, f"summary_chart.png")
+    models_sort_by_size = sorted(Models, key=lambda m: model_size.get(m, 0))
+    models_sort_by_size.append("Oracle")
+    chart = pd.DataFrame(columns=['Accuracy', 'Avg. Latency', 'Avg. Tokens', 'Selected'], index=models_sort_by_size)
+    # 填充数据，最后一个模型特殊处理
+    temp = str(config_data["Models"]["model_0"]["profile_result"][args.benchmark])
+    evaluate_record_path = os.path.join(temp, '..', 'evaluate_record.yaml')
+    with open(evaluate_record_path, 'r', encoding='utf-8') as f:
+        evaluate_record = yaml.safe_load(f)
+        for m in Models:
+            sel, _, _, _ = get_metric_for_model(oracle_summary, m)
+            acc = evaluate_record["Models"][m]["accuracy"]
+            lat = evaluate_record["Models"][m]["avg_runtime"]
+            tok = evaluate_record["Models"][m]["avg_tokens"]
+            chart.at[m, 'Accuracy'] = f"{acc}" if acc is not None else "N/A"
+            chart.at[m, 'Avg. Latency'] = f"{lat}" if lat is not None else "N/A"
+            chart.at[m, 'Avg. Tokens'] = f"{tok}" if tok is not None else "N/A"
+            chart.at[m, 'Selected'] = f"{sel:.2f}%" if sel is not None else "N/A"
+    # Oracle行
+    chart.at["Oracle", 'Accuracy'] = f"{(float(oracle_acc)*100):.2f}%" if oracle_acc is not None else "N/A"
+    chart.at["Oracle", 'Avg. Latency'] = f"{(float(oracle_lat)):.2f} seconds" if oracle_lat is not None else "N/A"
+    chart.at["Oracle", 'Avg. Tokens'] = f"{(float(oracle_tokens)):.2f} tokens" if oracle_tokens is not None else "N/A"
+    chart.at["Oracle", 'Selected'] = "100%"
+    plot_chart(chart, out_path=out0)
 
     # Plot 1: accuracy vs selection%
     out1 = os.path.join(out_dir, f"accuracy_vs_selection_{model_name}.png")
@@ -222,6 +269,8 @@ def main():
     print(out1)
     print(out2)
     print(out3)
+    print('chart saved:')
+    print(out0)
 
 
 if __name__ == '__main__':
