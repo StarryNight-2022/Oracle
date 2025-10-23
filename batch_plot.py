@@ -34,4 +34,4 @@ if __name__ == "__main__":
     for config_file in config_file_list:
         os.system(f"python3 gen_oracle.py --config {config_file} --latency_constraint {latency_constraint} --choice {choice}")
         # os.system(f"python gen_random.py --config {config_file}")
-        os.system(f"python plot_diagram.py --config {config_file} --latency_constraint {latency_constraint} --choice {choice} --benchmark {benchmark}")
+        os.system(f"python plot_2c_diagram.py --config {config_file} --latency_constraint {latency_constraint} --choice {choice} --benchmark {benchmark}")

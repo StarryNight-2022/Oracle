@@ -169,7 +169,7 @@ if __name__ == "__main__":
 
             out0 = os.path.join(out_dir, f"{model}_correctness_latency_bar_chart.png")
             # 移除异常值
-            data = remove_outliers(data, m=3.0)
+            data = remove_outliers(data, m=2.0)
             # 绘制柱状图
             plot_chart(model=model,
                        data=data, 

@@ -1,4 +1,5 @@
 #!/usr/bin/env python3
+# 对应飞书中的2C部分
 """
 读取 *.summary.json 文件并绘制三张图：
 - accuracy vs model_selection_percentage
