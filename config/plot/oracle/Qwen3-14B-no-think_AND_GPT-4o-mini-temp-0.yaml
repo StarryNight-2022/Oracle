@@ -4,9 +4,9 @@ Models:
     profile_result: 
       GSM8K: "/home/ouyk/project/ICDCS/Oracle/input/GSM8K/GPT-4o-mini-temp-0"
   model_1:
-    name: "Qwen3-0.6B-temp-0-en-thinking"
+    name: "Qwen3-14B-temp-0-no-thinking"
     profile_result:
-      GSM8K: "/home/ouyk/project/ICDCS/Oracle/input/GSM8K/Qwen3-0.6B-temp-0-en-thinking"
+      GSM8K: "/home/ouyk/project/ICDCS/Oracle/input/GSM8K/Qwen3-14B-temp-0-no-thinking"
 Benchmarks:
   GSM8K: "/home/ouyk/project/ICDCS/Oracle/profile/GSM8K/data/train.jsonl"
 Output:

@@ -1,0 +1,19 @@
+Models:
+  model_0:
+    name: "Qwen3-14B-temp-0-no-thinking"
+    profile_result: 
+      GSM8K: "/home/ouyk/project/ICDCS/Oracle/input/GSM8K/Qwen3-14B-temp-0-no-thinking"
+      MMLU: "/home/ouyk/project/ICDCS/Oracle/input/MMLU/Qwen3-14B-temp-0-no-thinking"
+      Chatbot-Arena: "/home/ouyk/project/ICDCS/Oracle/input/Chatbot-Arena/Qwen3-14B-temp-0-no-thinking"
+  model_1:
+    name: "Qwen3-0.6B-temp-0-no-thinking"
+    profile_result:
+      GSM8K: "/home/ouyk/project/ICDCS/Oracle/input/GSM8K/Qwen3-0.6B-temp-0-no-thinking"
+      MMLU: "/home/ouyk/project/ICDCS/Oracle/input/MMLU/Qwen3-0.6B-temp-0-no-thinking"
+      Chatbot-Arena: "/home/ouyk/project/ICDCS/Oracle/input/Chatbot-Arena/Qwen3-0.6B-temp-0-no-thinking"
+Benchmarks:
+  GSM8K: "/home/ouyk/project/ICDCS/Oracle/profile/GSM8K/data/train.jsonl"
+  MMLU: "/home/ouyk/project/ICDCS/Oracle/profile/MMLU/data/train.jsonl"
+  Chatbot-Arena: "/home/ouyk/project/ICDCS/Oracle/profile/Chatbot-Arena/data/prompt_0.05.jsonl"
+Output:
+  path: "./output"

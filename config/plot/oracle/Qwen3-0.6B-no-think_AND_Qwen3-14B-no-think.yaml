@@ -1,8 +1,8 @@
 Models:
   model_0:
-    name: "Deepseek-v3.2-Exp-temp-0-chat"
+    name: "Qwen3-14B-temp-0-no-thinking"
     profile_result: 
-      GSM8K: "/home/ouyk/project/ICDCS/Oracle/input/GSM8K/Deepseek-v3.2-Exp-temp-0-chat"
+      GSM8K: "/home/ouyk/project/ICDCS/Oracle/input/GSM8K/Qwen3-14B-temp-0-no-thinking"
   model_1:
     name: "Qwen3-0.6B-temp-0-no-thinking"
     profile_result:
