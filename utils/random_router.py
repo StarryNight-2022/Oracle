@@ -1,21 +1,13 @@
 import random
 from typing import Dict, Any, List, Tuple
+from utils.config import model_size
 
 # Fixed-seed RNG for reproducibility across calls
 _RNG = random.Random(42)
 
 class RandomRouter:
     def __init__(self):
-        self.model_size = {
-            "Deepseek-v3.2-Exp-temp-0-chat": 685,
-            "Deepseek-v3.2-Exp-temp-0-reasoner": 685,
-            "GPT-4o-mini-temp-0": 8,
-            "o4-mini-temp-1": 0,
-            "Qwen3-0.6B-temp-0-en-thinking": 0.6,
-            "Qwen3-0.6B-temp-0-no-thinking": 0.6,
-            "Qwen3-14B-temp-0-en-thinking": 14,
-            "Qwen3-14B-temp-0-no-thinking": 14,
-        }
+        self.model_size = model_size
 
     def _identify_small_large(self, results: Dict[str, Any]) -> Tuple[str, str]:
         # Determine small and large model names based on known sizes; fallback to name sort

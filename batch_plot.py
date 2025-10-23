@@ -11,6 +11,12 @@ def parse_args():
                     default="GSM8K",
                     choices=["GSM8K","MMLU"],
                     help="Specify the benchmark")
+    
+    parser.add_argument('--mode', 
+                    type=int, 
+                    required=True,
+                    choices=[0, 1, 2],  # 0:gen_random; 1:plot 2c diagram; 2:plot 3c diagram
+                    help="Specify the running mode")
 
     args = parser.parse_args()
     return args
@@ -31,7 +37,16 @@ if __name__ == "__main__":
             config_file_list.append(os.path.join(config_path, file))
 
     os.chdir("/home/ouyk/project/ICDCS/Oracle")
-    for config_file in config_file_list:
-        os.system(f"python3 gen_oracle.py --config {config_file} --latency_constraint {latency_constraint} --choice {choice}")
-        # os.system(f"python gen_random.py --config {config_file}")
-        os.system(f"python plot_2c_diagram.py --config {config_file} --latency_constraint {latency_constraint} --choice {choice} --benchmark {benchmark}")
+    if args.mode == 0:
+        for config_file in config_file_list:
+            os.system(f"python gen_random.py --config {config_file}")
+    elif args.mode == 1:
+        for config_file in config_file_list:
+            os.system(f"python3 gen_oracle.py --config {config_file} --latency_constraint {latency_constraint} --choice {choice}")
+            # os.system(f"python gen_random.py --config {config_file}")
+            os.system(f"python plot_2c_diagram.py --config {config_file} --latency_constraint {latency_constraint} --choice {choice} --benchmark {benchmark}")
+    elif args.mode == 2:
+        for config_file in config_file_list:
+            os.system(f"python plot_3c_diagram.py --config {config_file} --choice {choice} --benchmark {benchmark}")
+    else:
+        raise ValueError(f"Don't supports mode_{args.mode}!")

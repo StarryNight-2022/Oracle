@@ -16,21 +16,13 @@
 #   - percentage_to_large compute how many times the oracle selects the large model!
 from typing import List, Dict, Any, Optional, Union
 from copy import deepcopy
+from utils.config import model_size
 
 class Oracle:
     def __init__(self, config: Any):
         self.models:List[str] = [model_info['name'] for model_info in config['Models'].values()]
         # model size unit is "B" means Billian of params.
-        self.model_size = {
-            "Deepseek-v3.2-Exp-temp-0-chat": 685,
-            "Deepseek-v3.2-Exp-temp-0-reasoner": 685,
-            "GPT-4o-mini-temp-0": 8,
-            "o4-mini-temp-1": 0,
-            "Qwen3-0.6B-temp-0-en-thinking": 0.6,
-            "Qwen3-0.6B-temp-0-no-thinking": 0.6,
-            "Qwen3-14B-temp-0-en-thinking": 14,
-            "Qwen3-14B-temp-0-no-thinking": 14,
-        }
+        self.model_size = model_size
     
     # TODO: Need modify
     def get_oracle(self, results: Dict[str, Any], latency_constraint: Union[float, int, None], choice: int) -> Dict[str, Any]:  # 延迟限制的单位为秒:second

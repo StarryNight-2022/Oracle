@@ -24,6 +24,7 @@ import traceback
 # 自定义的包
 from utils.Benchmarks.benchmarks import load_dataset
 from utils.oracle_router import Oracle
+from utils.tools import ensure_dir, print_sign, read_jsonl
 
 def parse_args():
     parser = argparse.ArgumentParser(description="Process some parameters.")
@@ -36,32 +37,12 @@ def parse_args():
     
     parser.add_argument('--choice', type=int, default=0,
                         help="Specify the oracle strategy with latency constraint.")
+    
+    parser.add_argument('--outputs_dir', type=str, default=None,
+                        help="Specify the result storage path, default as None.")
 
     args = parser.parse_args()
     return args
-
-def ensure_dir(path: str):
-    if not os.path.exists(path):
-        os.makedirs(path, exist_ok=True)
-        
-def print_sign(benchmark: str):
-    width = os.get_terminal_size().columns
-    print('='*width)
-    print(benchmark.center(width, '*'))
-    
-# 每次装载一个结果
-def read_jsonl(config_data: Any, benchmark:str, model: str, idx: int):
-    filepath = os.path.join(
-        config_data["Models"][model]["profile_result"][benchmark],
-        f"train_{idx}.jsonl")
-    try:
-        with open(filepath, 'r') as file:
-            line = file.readline()
-            return json.loads(line)
-    except Exception:
-        print(traceback.format_exc())
-        return None
-        
 
 if __name__ == "__main__":
     runtime_dir = os.path.dirname(os.path.abspath(__file__))
@@ -93,7 +74,10 @@ if __name__ == "__main__":
         dataset = load_dataset(benchmark, config_data["Benchmarks"][benchmark])
         print_sign(benchmark)
         
-        outputs_dir = os.path.join(runtime_dir, "outputs", f"{benchmark}", "oracle", f"strategy_{args.choice}")
+        if args.outputs_dir == None:
+            outputs_dir = os.path.join(runtime_dir, "outputs", f"{benchmark}", "oracle", f"strategy_{args.choice}")
+        else:
+            outputs_dir = args.outputs_dir
         ensure_dir(outputs_dir)
         if latency_constraint == None:
             output_file = (((str(args.config)).split("/")[-1]).split(".yaml")[0]) + "_no-latency-constraint" + ".jsonl"

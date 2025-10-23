@@ -24,17 +24,7 @@ import pandas as pd
 import numpy as np
 
 import matplotlib.pyplot as plt
-
-model_size = {
-    "Deepseek-v3.2-Exp-temp-0-chat": 685,
-    "Deepseek-v3.2-Exp-temp-0-reasoner": 685,
-    "GPT-4o-mini-temp-0": 8,
-    "o4-mini-temp-1": 0,
-    "Qwen3-0.6B-temp-0-en-thinking": 0.6,
-    "Qwen3-0.6B-temp-0-no-thinking": 0.6,
-    "Qwen3-14B-temp-0-en-thinking": 14,
-    "Qwen3-14B-temp-0-no-thinking": 14,
-}
+from utils.config import model_size
 
 def load_summary(path: str) -> Dict[str, Any]:
     with open(path, 'r', encoding='utf-8') as f:
@@ -172,7 +162,7 @@ def main():
     # determine output directory: prefer explicit arg, otherwise outputs/<benchmark>/plots
     runtime_dir = os.path.dirname(os.path.abspath(__file__))
 
-    out_dir = os.path.join(runtime_dir, 'outputs', args.benchmark, 'plots', 'oracle', f"strategy_{args.choice}", (str(args.config).split("/")[-1]).split(".yaml")[0])
+    out_dir = os.path.join(runtime_dir, 'outputs', args.benchmark, 'plots', 'oracle', '2c', f"strategy_{args.choice}", (str(args.config).split("/")[-1]).split(".yaml")[0])
     ensure_out_dir(out_dir)
     print(f"输出目录: {out_dir}")
     latency_constraint = args.latency_constraint
