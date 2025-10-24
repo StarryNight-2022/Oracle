@@ -105,7 +105,7 @@ if __name__ == "__main__":
                     for model in config_data["Models"].keys():
                         results[config_data['Models'][model]["name"]] = read_jsonl(config_data, benchmark, model, idx)
                     # Call random router, return oracle-like dict: Dict[str, Any]
-                    oracle_like = Random_Judge.random2LLMs(results, percentage)
+                    oracle_like = Random_Judge.randomLLMs(results, [percentage])
                     results = {}  # 清空
 
                     # Collect Metrics
