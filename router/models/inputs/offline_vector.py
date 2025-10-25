@@ -1,0 +1,1 @@
+# Implementation for getting inputs from "Offline embedding hidden state based on HuggingFace transformers"
