@@ -3,7 +3,7 @@
 # step2. 获取Latency_max作为100% Latency-Constraint数值。
 # Question: 由于当前需要处理的是多个LLMs，如何定义Latency_constraint并进行异常值判定。
 # Strategy: 首先对于每个模型进行异常值的判断与移除，而后再选择多个模型中的最大值即可，视为Latency_max
-# step3. 划分为Latency-Constraint: [10%, 20%, ...100%] * Latency_max
+# step3. 划分为Latency-Constraint: [10%, 20%, ...100%] * Latency_max, 通过Slice参数指定划分粒度
 # step4. 调用gen_oracle.py进行Oracle决策，基于plot_2c_diagrame.py进行Modification
 
 import argparse
@@ -79,7 +79,7 @@ def plot_metric(vals: List[Tuple[float, float]], xlabel: str, ylabel: str, title
     plt.figure(figsize=(8, 6))
     x_vals = [item[0] for item in vals]
     y_vals = [item[1] for item in vals]
-    # plot random points
+    # plot oracle points
     plt.scatter(x_vals, y_vals, color='tab:orange', s=120, marker='*', alpha=0.6, label='oracle')
     # if many points, draw a faint line connecting them (sorted by x)
     try:
@@ -101,6 +101,7 @@ def plot_metric(vals: List[Tuple[float, float]], xlabel: str, ylabel: str, title
 
 
 def main():
+    Slice = 20
     parser = argparse.ArgumentParser()
     parser.add_argument('--config', type=str, default="./config/plot/oracle/Qwen3-0.6B-no-think_AND_Deepseek-v3.2-Exp-reasoner.yaml",
                         help="Specify the config file")
@@ -172,8 +173,8 @@ def main():
         max_latency = max(max_latency_list)
     print(f"最大Latency_max: {max_latency}s")
 
-    # 划分出 10个
-    Latency_constraints: List[float] = [round((i/10)*max_latency, 2) for i in range(1, 11)]
+    # 划分出 Slice 个
+    Latency_constraints: List[float] = [round((i/Slice)*max_latency, 2) for i in range(1, Slice + 1)]
     
     print(f"Latency_constraints: {Latency_constraints}")
     
@@ -190,9 +191,9 @@ def main():
         accuracy = summary["accuracy"]
         latency = summary["average_latency_per_query"]
         tokens = summary["average_output_tokens_per_query"]
-        accuracy_list.append((idx/10, accuracy))
-        latency_list.append((idx/10, latency))
-        tokens_list.append((idx/10, tokens))
+        accuracy_list.append((idx/Slice, accuracy))
+        latency_list.append((idx/Slice, latency))
+        tokens_list.append((idx/Slice, tokens))
         
     # 进行绘图
     # Plot 1: accuracy vs max_latency%

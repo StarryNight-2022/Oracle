@@ -15,7 +15,7 @@ def parse_args():
     parser.add_argument('--mode', 
                     type=int, 
                     required=True,
-                    choices=[0, 1, 2],  # 0:gen_random; 1:plot 2c diagram; 2:plot 3c diagram
+                    choices=[0, 1, 2, 3],  # 0:gen_random; 1:plot 2c diagram; 2:plot 3c diagram
                     help="Specify the running mode")
 
     args = parser.parse_args()
@@ -48,5 +48,8 @@ if __name__ == "__main__":
     elif args.mode == 2:
         for config_file in config_file_list:
             os.system(f"python plot_3c_diagram.py --config {config_file} --choice {choice} --benchmark {benchmark}")
+    elif args.mode == 3:
+        for config_file in config_file_list:
+            os.system(f"python plot_2c_3c_combined.py --config {config_file} --choice {choice} --benchmark {benchmark}")
     else:
         raise ValueError(f"Don't supports mode_{args.mode}!")
