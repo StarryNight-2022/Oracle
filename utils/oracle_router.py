@@ -259,12 +259,14 @@ class Oracle:
             # Assuming the router chooses the fastest model, but still timeout.
             judge_standards["latency"] = dict(sorted(judge_standards["latency"].items(), key=lambda item: item[1]))
             fastest_model = list(judge_standards["latency"].keys())[0]
+            # NOTE: Change the method to calculate output_tokens when timeout
+            output_tokens = (latency_constraint / judge_standards["latency"][fastest_model]) * judge_standards["output_tokens"][fastest_model]
             oracle:Dict[str, Any] = {
                 "raw": raw,
                 "model": fastest_model,
                 "correctness": False,          # Cause timeout, don't get answer from the router. So, correctness = Fasle
                 "latency": latency_constraint, # Cause timeout, the latency after routed should be the specific latency-constraint 
-                "output_tokens": 0,            # Cause timeout, don't get answer from the router. So, output_tokens = 0
+                "output_tokens": output_tokens,            # Cause timeout, don't get answer from the router. So, output_tokens = 0
                 }
         else:
             oracle:Dict[str, Any] = {
