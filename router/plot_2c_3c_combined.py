@@ -1,19 +1,11 @@
-#!/usr/bin/env python3
-# 对应飞书中的2C部分
-"""
-读取 *.summary.json 文件并绘制三张图：
-- accuracy vs model_selection_percentage
-- average_latency_per_query vs model_selection_percentage
-- average_output_tokens_per_query vs model_selection_percentage
+# Copy from plot_2c_diagram.py
+# 将2c图与3c图进行合并，将结果展示在同一个图中
+# 对于这个组合图：
+# 1.y轴依然是Accuracy, Average Latency, Average Tokens这三个指标
+# 2.x轴则保持为对较大模型的调用比例，以便与Random_Router的数据保持对齐。在不同Latency_Constraint下，对于较大模型的调用比例是可以知道的，因此x轴可以统一。
+# 3.为了避免Latency_Constraint与y轴三个指标存在非双射的情况，需要在最终图像中每个oracle点旁边注明Latency_Constraint为多少。
+# 4.关于数据来源，首先运行 plot_3c_diagram.py，然后可以直接读取这一步生成的oralc_with_different_latency_constraint的数据。
 
-支持两类数据：
-- oracle: 单组 summary（单个文件）
-- random: 多组 summary（目录或多个文件），将作为多个点绘制
-
-使用示例：
-python plot_diagram.py --oracle path/to/oracle.summary.json --random_dir path/to/random_summaries/ --model "Qwen3-0.6B" --out_dir outputs/plots
-
-"""
 import argparse
 import json
 import os
@@ -22,6 +14,7 @@ from typing import List, Dict, Any
 import yaml
 import pandas as pd
 import numpy as np
+import re
 
 import matplotlib.pyplot as plt
 from utils.config import model_size
@@ -81,7 +74,7 @@ def get_metric_for_model(summary: Dict[str, Any], model: str):
     return sel, accuracy, avg_latency, avg_tokens
 
 
-def plot_metric(x_vals: List[float], y_vals: List[float], oracle_x: float, oracle_y: float, xlabel: str, ylabel: str, title: str, out_path: str):
+def plot_metric(x_vals: List[float], y_vals: List[float], oracle_x_list: List[float], oracle_y_list: List[float], xlabel: str, ylabel: str, title: str, out_path: str):
     plt.figure(figsize=(8, 6))
     # plot random points
     plt.scatter(x_vals, y_vals, color='tab:blue', alpha=0.6, label='random')
@@ -94,9 +87,16 @@ def plot_metric(x_vals: List[float], y_vals: List[float], oracle_x: float, oracl
     except Exception:
         pass
 
-    # plot oracle as a distinct marker
-    if oracle_x is not None and oracle_y is not None:
-        plt.scatter([oracle_x], [oracle_y], color='tab:orange', s=120, marker='*', label='oracle')
+    # plot oracle points
+    plt.scatter(oracle_x_list, oracle_y_list, color='tab:orange', s=120, marker='*', label='oracle')
+    # if many points, draw a faint line connecting them (sorted by x)
+    try:
+        pairs = sorted([(x, y) for x, y in zip(oracle_x_list, oracle_y_list) if x is not None and y is not None])
+        if len(pairs) > 1:
+            xs, ys = zip(*pairs)
+            plt.plot(xs, ys, color='tab:orange', alpha=0.3)
+    except Exception:
+        pass
 
     plt.xlabel(xlabel)
     plt.ylabel(ylabel)
@@ -107,33 +107,12 @@ def plot_metric(x_vals: List[float], y_vals: List[float], oracle_x: float, oracl
     plt.savefig(out_path, dpi=300)
     plt.close()
 
-# TODO: 绘制表格
-def plot_chart(data: pd.DataFrame, out_path: str):
-    # 使用styler来渲染表格，它会自动处理索引
-    fig, ax = plt.subplots(figsize=(8, len(data)*0.5 + 1))
-    ax.axis('off')
-    
-    # 使用pandas的styler来创建表格
-    table = ax.table(cellText=np.vstack([data.columns, data.values]),
-                     rowLabels=['Models (small->big)'] + data.index.tolist(),
-                     cellLoc='center',
-                     loc='center')
-    
-    table.auto_set_font_size(False)
-    table.set_fontsize(10)
-    table.scale(1, 1.5)
-    plt.tight_layout()
-    plt.savefig(out_path, dpi=300)
-    plt.close()
-
 def main():
     parser = argparse.ArgumentParser()
     parser.add_argument('--config', type=str, default="./config/plot/oracle/Qwen3-0.6B-no-think_AND_Deepseek-v3.2-Exp-reasoner.yaml",
                         help="Specify the config file")
     parser.add_argument('--benchmark', type=str, default="GSM8K", 
                         choices=["GSM8K","MMLU"], help='Benchmark name to load summaries for')
-    parser.add_argument('--latency_constraint', type=float, default=-1, 
-                        help='Latency constraint used when generating summaries (use -1 for none)')
     parser.add_argument('--choice', type=int, default=0,
                     help="Specify the oracle strategy with latency constraint.")
     args = parser.parse_args()
@@ -160,29 +139,43 @@ def main():
         raise ValueError(f"指定的模型 '{model_name}' 不在配置文件 Models 列表中: {Models}")
 
     # determine output directory: prefer explicit arg, otherwise outputs/<benchmark>/plots
-    runtime_dir = os.path.dirname(os.path.abspath(__file__))
+    runtime_dir = os.path.dirname(os.Path.join(os.path.abspath(__file__), ".."))
 
-    out_dir = os.path.join(runtime_dir, 'outputs', args.benchmark, 'plots', 'oracle', '2c', f"strategy_{args.choice}", (str(args.config).split("/")[-1]).split(".yaml")[0])
+    out_dir = os.path.join(runtime_dir, 'outputs', args.benchmark, 'plots', 'oracle', '2c&3c', f"strategy_{args.choice}", (str(args.config).split("/")[-1]).split(".yaml")[0])
     ensure_out_dir(out_dir)
     print(f"输出目录: {out_dir}")
-    latency_constraint = args.latency_constraint
-    if latency_constraint == -1:
-        latency_constraint = None
 
-    # construct oracle summary path using same naming rule as gen_oracle.py
-    oracle_outputs_dir = os.path.join(runtime_dir, "outputs", args.benchmark, "oracle", f"strategy_{args.choice}")
+    # NOTE: Load the oracle summary from plot_3c_diagram.py results.
+    oracle_outputs_dir = os.path.join(runtime_dir, "outputs", args.benchmark, "oracle", f"strategy_{args.choice}", "3c_plot")
     config_basename = (str(args.config).split("/")[-1]).split(".yaml")[0]
-    if latency_constraint is None:
-        oracle_output_file = config_basename + "_no-latency-constraint" + ".jsonl"
-    else:
-        oracle_output_file = config_basename + f"_{latency_constraint}s-latency-constraint" + ".jsonl"
-    oracle_summary_path = os.path.join(oracle_outputs_dir, oracle_output_file + ".summary.json")
+    # oracle_output_file = config_basename + f"_{latency_constraint}s-latency-constraint" + ".jsonl"
+    # oracle_summary_path = os.path.join(oracle_outputs_dir, oracle_output_file + ".summary.json")
+    # 使用正则表达式匹配oracle_outputs_dir路径下格式为 config_basename_XXXs-latency-constraint.jsonl.summary.json 的文件
+    # XXX可能是浮点数
+    pattern = re.compile(re.escape(config_basename) + r'_(\d+(?:\.\d+)?)s-latency-constraint\.jsonl\.summary\.json')
+    matched_files = [f for f in os.listdir(oracle_outputs_dir) if pattern.match(f)]
 
-    # load oracle summary if exists
-    if not os.path.exists(oracle_summary_path):
-        raise FileNotFoundError(f"找不到 oracle summary 文件: {oracle_summary_path}")
-    oracle_summary = load_summary(oracle_summary_path)
-    oracle_sel, oracle_acc, oracle_lat, oracle_tokens = get_metric_for_model(oracle_summary, model_name)
+    if not matched_files:
+        raise FileNotFoundError(f"在目录 {oracle_outputs_dir} 中未找到匹配的 oracle summary 文件")
+    # 根据 choice 参数选择对应的文件
+    matched_files.sort()  # 确保顺序一致
+
+    oracle_sel_list:List[float] = []
+    oracle_acc_list:List[float] = []
+    oracle_lat_list:List[float] = []
+    oracle_tokens_list:List[float] = []
+    
+    for file in matched_files:
+        oracle_summary_path = os.path.join(oracle_outputs_dir, file)
+        # load oracle summary if exists
+        if not os.path.exists(oracle_summary_path):
+            raise FileNotFoundError(f"找不到 oracle summary 文件: {oracle_summary_path}")
+        oracle_summary = load_summary(oracle_summary_path)
+        oracle_sel, oracle_acc, oracle_lat, oracle_tokens = get_metric_for_model(oracle_summary, model_name)
+        oracle_sel_list.append(oracle_sel)
+        oracle_acc_list.append(oracle_acc)
+        oracle_lat_list.append(oracle_lat)
+        oracle_tokens_list.append(oracle_tokens)
 
     # collect random summaries using same naming rule as gen_random.py
     random_outputs_dir = os.path.join(runtime_dir, "outputs", args.benchmark, "random")
@@ -210,49 +203,22 @@ def main():
             random_acc.append(acc if acc is not None else float('nan'))
             random_lat.append(lat if lat is not None else float('nan'))
             random_tokens.append(tok if tok is not None else float('nan'))
-            
-    # Chart: construct a pd.DataFrame to storage data of a chart
-    # 基于model_size对Models排序，由小到大
-    out0 = os.path.join(out_dir, f"summary_chart.png")
-    models_sort_by_size = sorted(Models, key=lambda m: model_size.get(m, 0))
-    models_sort_by_size.append("Oracle")
-    chart = pd.DataFrame(columns=['Accuracy', 'Avg. Latency', 'Avg. Tokens', 'Selected'], index=models_sort_by_size)
-    # 填充数据，最后一个模型特殊处理
-    temp = str(config_data["Models"]["model_0"]["profile_result"][args.benchmark])
-    evaluate_record_path = os.path.join(temp, '..', 'evaluate_record.yaml')
-    with open(evaluate_record_path, 'r', encoding='utf-8') as f:
-        evaluate_record = yaml.safe_load(f)
-        for m in Models:
-            sel, _, _, _ = get_metric_for_model(oracle_summary, m)
-            acc = evaluate_record["Models"][m]["accuracy"]
-            lat = evaluate_record["Models"][m]["avg_runtime"]
-            tok = evaluate_record["Models"][m]["avg_tokens"]
-            chart.at[m, 'Accuracy'] = f"{acc}" if acc is not None else "N/A"
-            chart.at[m, 'Avg. Latency'] = f"{lat}" if lat is not None else "N/A"
-            chart.at[m, 'Avg. Tokens'] = f"{tok}" if tok is not None else "N/A"
-            chart.at[m, 'Selected'] = f"{sel:.2f}%" if sel is not None else "N/A"
-    # Oracle行
-    chart.at["Oracle", 'Accuracy'] = f"{(float(oracle_acc)*100):.2f}%" if oracle_acc is not None else "N/A"
-    chart.at["Oracle", 'Avg. Latency'] = f"{(float(oracle_lat)):.2f} seconds" if oracle_lat is not None else "N/A"
-    chart.at["Oracle", 'Avg. Tokens'] = f"{(float(oracle_tokens)):.2f} tokens" if oracle_tokens is not None else "N/A"
-    chart.at["Oracle", 'Selected'] = "100%"
-    plot_chart(chart, out_path=out0)
 
     # Plot 1: accuracy vs selection%
     out1 = os.path.join(out_dir, f"accuracy_vs_selection_{model_name}.png")
-    plot_metric(random_x, random_acc, oracle_sel, oracle_acc,
+    plot_metric(random_x, random_acc, oracle_sel_list, oracle_acc_list,
                 xlabel='model selection percentage (%)', ylabel='accuracy',
                 title=f'Accuracy vs {model_name} Selection % ({args.benchmark})', out_path=out1)
 
     # Plot 2: average latency per query vs selection%
     out2 = os.path.join(out_dir, f"latency_vs_selection_{model_name}.png")
-    plot_metric(random_x, random_lat, oracle_sel, oracle_lat,
+    plot_metric(random_x, random_lat, oracle_sel_list, oracle_lat_list,
                 xlabel='model selection percentage (%)', ylabel='avg latency (s)',
                 title=f'Average Latency vs {model_name} Selection % ({args.benchmark})', out_path=out2)
 
     # Plot 3: average output tokens per query vs selection%
     out3 = os.path.join(out_dir, f"tokens_vs_selection_{model_name}.png")
-    plot_metric(random_x, random_tokens, oracle_sel, oracle_tokens,
+    plot_metric(random_x, random_tokens, oracle_sel_list, oracle_tokens_list,
                 xlabel='model selection percentage (%)', ylabel='avg output tokens',
                 title=f'Average Output Tokens vs {model_name} Selection % ({args.benchmark})', out_path=out3)
 
@@ -260,10 +226,7 @@ def main():
     print(out1)
     print(out2)
     print(out3)
-    print('chart saved:')
-    print(out0)
 
 
 if __name__ == '__main__':
     main()
-# 该文件负责绘制三个图像

@@ -91,7 +91,7 @@ def plot_chart(model: str, data: List[Tuple[float, bool]], num_interval: int, la
     
 
 if __name__ == "__main__":
-    runtime_dir = os.path.dirname(os.path.abspath(__file__))
+    runtime_dir = os.path.dirname(os.Path.join(os.path.abspath(__file__), ".."))
     args = parse_args()
     benchmark = str(args.benchmark)
     workspace = Path(os.path.join(str(args.input_dir), benchmark))

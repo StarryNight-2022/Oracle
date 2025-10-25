@@ -152,7 +152,7 @@ def main():
         raise ValueError(f"benchmark '{benchmark}' 不在配置文件中: {Benchmarks}")
 
     # determine output directory: prefer explicit arg, otherwise outputs/<benchmark>/plots
-    runtime_dir = os.path.dirname(os.path.abspath(__file__))
+    runtime_dir = os.path.dirname(os.Path.join(os.path.abspath(__file__), ".."))
 
     out_dir = os.path.join(runtime_dir, 'outputs', benchmark, 'plots', 'scatter', (str(args.config).split("/")[-1]).split(".yaml")[0])
     ensure_out_dir(out_dir)

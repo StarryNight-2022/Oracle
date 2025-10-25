@@ -36,7 +36,7 @@ if __name__ == "__main__":
         if file.endswith(".yaml"):
             config_file_list.append(os.path.join(config_path, file))
 
-    os.chdir("/home/ouyk/project/ICDCS/Oracle")
+    os.chdir("/home/ouyk/project/ICDCS/Oracle/router")
     if args.mode == 0:
         for config_file in config_file_list:
             os.system(f"python gen_random.py --config {config_file}")

@@ -115,7 +115,7 @@ def main():
                     help="Specify the input file storage path")
     args = parser.parse_args()
 
-    runtime_dir = os.path.dirname(os.path.abspath(__file__))
+    runtime_dir = os.path.dirname(os.Path.join(os.path.abspath(__file__), ".."))
     benchmark = str(args.benchmark)
     workspace = Path(os.path.join(str(args.input_dir), benchmark))
 

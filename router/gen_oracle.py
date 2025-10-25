@@ -45,7 +45,7 @@ def parse_args():
     return args
 
 if __name__ == "__main__":
-    runtime_dir = os.path.dirname(os.path.abspath(__file__))
+    runtime_dir = os.path.dirname(os.Path.join(os.path.abspath(__file__), ".."))
     
     args = parse_args()
     
