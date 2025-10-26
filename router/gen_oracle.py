@@ -22,9 +22,9 @@ import yaml
 import traceback
 
 # 自定义的包
-from utils.Benchmarks.benchmarks import load_dataset
-from utils.oracle_router import Oracle
-from utils.tools import ensure_dir, print_sign, read_jsonl
+from router.utils.Benchmarks.benchmarks import load_dataset
+from router.utils.oracle_router import Oracle
+from router.utils.tools import ensure_dir, print_sign, read_jsonl
 
 def parse_args():
     parser = argparse.ArgumentParser(description="Process some parameters.")

@@ -1,6 +1,6 @@
 import random
 from typing import Dict, Any, List, Tuple
-from utils.config import model_size
+from router.utils.config import model_size
 
 # Fixed-seed RNG for reproducibility across calls
 _RNG = random.Random(42)

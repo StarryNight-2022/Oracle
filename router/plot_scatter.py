@@ -15,7 +15,7 @@ import traceback
 import matplotlib.pyplot as plt
 
 # 自定义的包
-from utils.Benchmarks.benchmarks import load_dataset
+from router.utils.Benchmarks.benchmarks import load_dataset
 
 def ensure_out_dir(path: str):
     os.makedirs(path, exist_ok=True)

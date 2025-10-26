@@ -19,7 +19,7 @@ import matplotlib.pyplot as plt
 from utils.config import model_size
 from tqdm import tqdm
 
-from utils.tools import ensure_dir, is_folder_empty, print_sign, read_profile_result, remove_outliers
+from router.utils.tools import ensure_dir, is_folder_empty, print_sign, read_profile_result, remove_outliers
 
 def load_summary(path: str) -> Dict[str, Any]:
     with open(path, 'r', encoding='utf-8') as f:

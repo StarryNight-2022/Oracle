@@ -16,7 +16,7 @@
 #   - percentage_to_large compute how many times the oracle selects the large model!
 from typing import List, Dict, Any, Optional, Union
 from copy import deepcopy
-from utils.config import model_size
+from router.utils.config import model_size
 
 class Oracle:
     def __init__(self, config: Any):

@@ -1,2 +1,2 @@
-from .dataset import *
-from .evaluate import *
+from .dataset import load_MMLU
+from .evaluate import parse_answer_MMLU

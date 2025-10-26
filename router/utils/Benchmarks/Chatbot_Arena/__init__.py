@@ -1,2 +1,2 @@
-from .dataset import *
-from .evaluate import *
+from .dataset import load_Chatbot_Arena
+from .evaluate import parse_answer_Chatbot_Arena

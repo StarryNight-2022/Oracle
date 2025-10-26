@@ -1,0 +1,5 @@
+Data:
+  model: "Qwen3-0.6B-temp-0-no-thinking"
+  benchmark: "GSM8K"
+  data_dir: "/home/ouyk/project/ICDCS/Oracle/input/GSM8K/Qwen3-0.6B-temp-0-no-thinking"
+  num_data: 7473

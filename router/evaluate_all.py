@@ -11,7 +11,7 @@ import traceback
 from tqdm import tqdm
 
 # 自定义的包
-from utils.Benchmarks.benchmarks import load_dataset, parse_answer
+from router.utils.Benchmarks.benchmarks import load_dataset, parse_answer
 
 def parse_args():
     parser = argparse.ArgumentParser(description="Process some parameters.")

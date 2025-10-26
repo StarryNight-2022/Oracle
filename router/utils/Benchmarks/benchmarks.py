@@ -2,18 +2,18 @@ from .GSM8K import load_GSM8K, parse_answer_GSM8K
 from .MMLU import load_MMLU, parse_answer_MMLU
 from .Chatbot_Arena import load_Chatbot_Arena, parse_answer_Chatbot_Arena
 
-def load_dataset(dataset:str, path:str):
-    if dataset == "GSM8K":
+def load_dataset(benchmark:str, path:str):
+    if benchmark == "GSM8K":
         return load_GSM8K(path)
-    if dataset == "MMLU":
+    if benchmark == "MMLU":
         return load_MMLU(path)
-    if dataset == "Chatbot-Arena":
+    if benchmark == "Chatbot-Arena":
         return load_Chatbot_Arena(path)
     
-def parse_answer(dataset:str, String:str):
-    if dataset == "GSM8K":
+def parse_answer(benchmark:str, String:str):
+    if benchmark == "GSM8K":
         return parse_answer_GSM8K(String)
-    if dataset == "MMLU":
+    if benchmark == "MMLU":
         return parse_answer_MMLU(String)
-    if dataset == "Chatbot-Arena":
+    if benchmark == "Chatbot-Arena":
         return parse_answer_Chatbot_Arena(String)

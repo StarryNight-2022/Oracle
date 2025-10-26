@@ -18,8 +18,8 @@ import matplotlib.pyplot as plt
 import numpy as np
 
 # 自定义的包
-from utils.Benchmarks.benchmarks import load_dataset, parse_answer
-from utils.tools import remove_outliers, print_sign, is_folder_empty, read_profile_result
+from router.utils.Benchmarks.benchmarks import load_dataset, parse_answer
+from router.utils.tools import remove_outliers, print_sign, is_folder_empty, read_profile_result
 
 def parse_args():
     parser = argparse.ArgumentParser(description="Process some parameters.")

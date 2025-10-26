@@ -17,7 +17,7 @@ import numpy as np
 import re
 
 import matplotlib.pyplot as plt
-from utils.config import model_size
+from router.utils.config import model_size
 
 def load_summary(path: str) -> Dict[str, Any]:
     with open(path, 'r', encoding='utf-8') as f:

@@ -22,8 +22,8 @@ import yaml
 import traceback
 
 # 自定义的包
-from utils.Benchmarks.benchmarks import load_dataset
-from utils.random_router import RandomRouter
+from router.utils.Benchmarks.benchmarks import load_dataset
+from router.utils.random_router import RandomRouter
 
 
 def parse_args():

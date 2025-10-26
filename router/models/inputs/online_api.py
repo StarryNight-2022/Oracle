@@ -1,1 +1,0 @@
-# Implementation for getting inputs from "Online embedding API deployed based on vLLM"
