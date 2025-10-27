@@ -22,3 +22,4 @@ raw_input/*
 *.tar.gz
 *.csv
 *.env
+export_env_params.sh

@@ -2,35 +2,45 @@
 from openai import OpenAI, AsyncOpenAI
 import os
 from typing import List, Tuple, Dict
-from online_embedding import online_embedding_profile
+from router.models.inputs.online_embedding import online_embedding_profile
 import numpy as np
 import yaml
 from tqdm import tqdm
 
+from router.utils.tools import ensure_dir
+
 # 读取提前生成好的npy数据
 class offline_embedding():
-    def __init__(self, config:Dict, embedding_model:str = "Qwen3-Embeddings-0.6B"):
-        self.embeddings_dir = config["Data"]["embeddings_dir"]
+    # 需要指定index_list参数来确保移除了指定的outliers
+    def __init__(self, config:Dict, index_list:List[int], model:str, embedding_model:str = "Qwen3-Embeddings-0.6B", gen:bool=False):
         self.benchmark = config["Data"]["benchmark"]
-        self.model = embedding_model
+        ensure_dir(os.path.join(config["Data"]["embeddings_dir"], model))
+        self.embeddings_dir = os.path.join(config["Data"]["embeddings_dir"], model, f"{self.benchmark}_embeddings.npy")
+        self.model = model
+        self.embedding_model = embedding_model
+        self.index_list = index_list
         
         self.embedding_list: List[Tuple[int, float, List[float]]] = []
-        self.load_data()
+        if gen == False:
+            try:
+                self.load_data()
+            except:
+                raise FileNotFoundError(f"Please generate the {self.benchmark}_embeddings.npy first!")
         self.access_count = 0
     
     def __iter__(self):
         self.access_count += 1
-        for item in self.embedding_lists:
+        for item in self.embedding_list:
             idx, time, embedding = item
             yield idx, time, embedding
     
     def __len__(self):
-        return len(self.embedding_lists)
+        return len(self.embedding_list)
     
     def gen_data(self):
         # 获取到在GSM8K数据集上每一条query对应的num_tokens
         idx = 0
-        for embedding, time in tqdm(online_embedding_profile(config, embedding_model)):
+        for embedding, time in tqdm(online_embedding_profile(config, index_list=self.index_list, model=self.model, embedding_model=self.embedding_model)):
             idx += 1
             self.embedding_list.append((idx, time, embedding))
             
@@ -40,7 +50,7 @@ class offline_embedding():
     
     def load_data(self):
         loaded_data = np.load(self.embeddings_dir, allow_pickle=True)
-        self.embedding_lists = self.structured_array_to_list(loaded_data)
+        self.embedding_list = self.structured_array_to_list(loaded_data)
 
     def list_to_structured_array(self, data: List[Tuple[int, float, List[float]]]) -> np.ndarray:
         """将列表数据转换为结构化数组"""
@@ -78,10 +88,15 @@ if __name__ == "__main__":
     with open(config_file, "r") as f:
         config = yaml.safe_load(f)
     
+    model_A = "Qwen3-0.6B-temp-0-no-thinking"
+    model_B = "Qwen3-14B-temp-0-no-thinking"
+    record = os.path.join(config["Data"]["data_dir"], model_B, "without_outliers.npy")
+    index_list = (np.load(record)).tolist()
+    
     # Generate embeddings with vLLM(生成embeddings数据)
-    # tool = offline_embedding(config, embedding_model)
+    # tool = offline_embedding(config, index_list, model_A, embedding_model, gen=True)
     # tool.gen_data()
     
     # 获取到在GSM8K数据集上每一条query对应的num_tokens
-    for idx, time, embedding in offline_embedding(config, embedding_model):
+    for idx, time, embedding in offline_embedding(config, index_list, model_A, embedding_model, gen=False):
         print(idx, time, len(embedding))

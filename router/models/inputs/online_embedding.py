@@ -7,13 +7,16 @@ import os
 import json
 import traceback
 import time
+import numpy as np
 
 class online_embedding():
-    def __init__(self, config: Dict, embedding_model:str = "Qwen3-Embeddings-0.6B"):
+    # 需要指定index_list参数来确保移除了指定的outliers
+    def __init__(self, config: Dict, index_list:List[int], model:str, embedding_model:str = "Qwen3-Embeddings-0.6B"):
         self.benchmark = config["Data"]["benchmark"]
-        self.data_dir  = config["Data"]["data_dir"]
         self.num_data  = config["Data"]["num_data"]
+        self.data_dir  = os.path.join(config["Data"]["data_dir"], model)
         self.model = embedding_model
+        self.index_list = index_list
 
         # Embedding API
         self.api_key  = os.environ.get("Local_Embedding_Key")
@@ -23,12 +26,12 @@ class online_embedding():
         )
         
         self.access_count = 0
-        self.data_lists = []
+        self.data_list = []
         self.load_datasets()
     
     def __iter__(self):
         self.access_count += 1
-        for item in self.data_lists:
+        for item in self.data_list:
             embedding = self.embed(item)
             yield embedding
     
@@ -36,8 +39,8 @@ class online_embedding():
         return len(self.datasets)
     
     def load_datasets(self):
-        for idx in range(1, self.num_data+1):
-            self.data_lists.append(self.read_jsonl(idx))
+        for idx in self.index_list:
+            self.data_list.append(self.read_jsonl(idx))
     
     # 每次装载一个结果，选出"prompt"
     def read_jsonl(self, idx: int):
@@ -60,11 +63,13 @@ class online_embedding():
         return responses.data[0].embedding
     
 class online_embedding_profile():
-    def __init__(self, config: Dict, embedding_model:str = "Qwen3-Embeddings-0.6B"):
+    # 需要指定index_list参数来确保移除了指定的outliers
+    def __init__(self, config: Dict, index_list:List[int], model:str, embedding_model:str = "Qwen3-Embeddings-0.6B"):
         self.benchmark = config["Data"]["benchmark"]
-        self.data_dir  = config["Data"]["data_dir"]
         self.num_data  = config["Data"]["num_data"]
+        self.data_dir  = os.path.join(config["Data"]["data_dir"], model)
         self.model = embedding_model
+        self.index_list = index_list
 
         # Embedding API
         self.api_key  = os.environ.get("Local_Embedding_Key")
@@ -74,12 +79,12 @@ class online_embedding_profile():
         )
         
         self.access_count = 0
-        self.data_lists = []
+        self.data_list = []
         self.load_datasets()
     
     def __iter__(self):
         self.access_count += 1
-        for item in self.data_lists:
+        for item in self.data_list:
             embedding, time = self.embed(item)
             yield embedding, time
     
@@ -87,8 +92,8 @@ class online_embedding_profile():
         return len(self.datasets)
     
     def load_datasets(self):
-        for idx in range(1, self.num_data+1):
-            self.data_lists.append(self.read_jsonl(idx))
+        for idx in self.index_list:
+            self.data_list.append(self.read_jsonl(idx))
     
     # 每次装载一个结果，选出"prompt"
     def read_jsonl(self, idx: int):
@@ -119,6 +124,11 @@ if __name__ == "__main__":
     with open(config_file, "r") as f:
         config = yaml.safe_load(f)
     
+    model_A = "Qwen3-0.6B-temp-0-no-thinking"
+    model_B = "Qwen3-14B-temp-0-no-thinking"
+    record = os.path.join(config["Data"]["data_dir"], model_B, "without_outliers.npy")
+    index_list = (np.load(record)).tolist()
+    
     # 获取到在GSM8K数据集上每一条query对应的num_tokens
-    for embedding in online_embedding(config, embedding_model="Qwen3-Embeddings-0.6B"):
+    for embedding in online_embedding(config, index_list, model_A, embedding_model="Qwen3-Embeddings-0.6B"):
         print(len(embedding))

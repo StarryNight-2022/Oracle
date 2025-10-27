@@ -1,11 +1,11 @@
-from typing import List, Tuple, Any
+from typing import List, Tuple, Any, Union
 import numpy as np
 import os
 import json
 import traceback
 from pathlib import Path
 
-def remove_outliers(data: List[Tuple[float, bool]], m: float = 2.0) -> List[Tuple[float, bool]]:
+def remove_outliers(data: List[Union[Tuple[float], Tuple[float, bool]]], m: float = 2.0) -> List[Union[Tuple[float], Tuple[float, bool]]]:
     latencies = [item[0] for item in data]
     mean = np.mean(latencies)
     std = np.std(latencies)

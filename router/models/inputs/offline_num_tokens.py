@@ -4,27 +4,30 @@ from typing import Dict, List, Any
 import os
 import json
 import traceback
+import numpy as np
 
 class offline_tokens():
-    def __init__(self, config: Dict):
+    # 需要指定index_list参数来确保移除了指定的outliers
+    def __init__(self, config: Dict, index_list:List[int], model:str):
         self.benchmark = config["Data"]["benchmark"]
-        self.data_dir  = config["Data"]["data_dir"]
         self.num_data  = config["Data"]["num_data"]
+        self.data_dir  = os.path.join(config["Data"]["data_dir"], model)
+        self.index_list = index_list
         self.access_count = 0
-        self.data_lists = []
+        self.data_list = []
         self.load_datasets()
     
     def __iter__(self):
         self.access_count += 1
-        for item in self.data_lists:
+        for item in self.data_list:
             yield item
     
     def __len__(self):
         return len(self.datasets)
     
     def load_datasets(self):
-        for idx in range(1, self.num_data+1):
-            self.data_lists.append(self.read_jsonl(idx))
+        for idx in self.index_list:
+            self.data_list.append(self.read_jsonl(idx))
     
     # 每次装载一个结果，选出"length_of_output_token_ids"
     def read_jsonl(self, idx: int):
@@ -45,6 +48,11 @@ if __name__ == "__main__":
     with open(config_file, "r") as f:
         config = yaml.safe_load(f)
     
+    model_A = "Qwen3-0.6B-temp-0-no-thinking"
+    model_B = "Qwen3-14B-temp-0-no-thinking"
+    record = os.path.join(config["Data"]["data_dir"], model_B, "without_outliers.npy")
+    index_list = (np.load(record)).tolist()
+    
     # 获取到在GSM8K数据集上每一条query对应的num_tokens
-    for data in offline_tokens(config):
+    for data in offline_tokens(config, index_list, model_A):
         print(data)
