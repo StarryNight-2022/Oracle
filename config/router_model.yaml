@@ -3,3 +3,4 @@ Data:
   benchmark: "GSM8K"
   data_dir: "/home/ouyk/project/ICDCS/Oracle/input/GSM8K/Qwen3-0.6B-temp-0-no-thinking"
   num_data: 7473
+  embeddings_dir: /home/ouyk/project/ICDCS/Oracle/input/Embeddings/Qwen3-Embeddings-0.6B/GSM8K_embeddings.npy

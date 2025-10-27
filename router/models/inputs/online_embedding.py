@@ -6,23 +6,25 @@ from typing import Dict, List, Any
 import os
 import json
 import traceback
+import time
 
 class online_embedding():
     def __init__(self, config: Dict, embedding_model:str = "Qwen3-Embeddings-0.6B"):
         self.benchmark = config["Data"]["benchmark"]
         self.data_dir  = config["Data"]["data_dir"]
         self.num_data  = config["Data"]["num_data"]
-        self.access_count = 0
-        self.data_lists = []
-        self.load_datasets()
-        
+        self.model = embedding_model
+
         # Embedding API
         self.api_key  = os.environ.get("Local_Embedding_Key")
         self.client = OpenAI(
             api_key=self.api_key,
             base_url="http://localhost:8000/v1",
         )
-        self.model = embedding_model
+        
+        self.access_count = 0
+        self.data_lists = []
+        self.load_datasets()
     
     def __iter__(self):
         self.access_count += 1
@@ -56,6 +58,59 @@ class online_embedding():
             model=self.model,
         )
         return responses.data[0].embedding
+    
+class online_embedding_profile():
+    def __init__(self, config: Dict, embedding_model:str = "Qwen3-Embeddings-0.6B"):
+        self.benchmark = config["Data"]["benchmark"]
+        self.data_dir  = config["Data"]["data_dir"]
+        self.num_data  = config["Data"]["num_data"]
+        self.model = embedding_model
+
+        # Embedding API
+        self.api_key  = os.environ.get("Local_Embedding_Key")
+        self.client = OpenAI(
+            api_key=self.api_key,
+            base_url="http://localhost:8000/v1",
+        )
+        
+        self.access_count = 0
+        self.data_lists = []
+        self.load_datasets()
+    
+    def __iter__(self):
+        self.access_count += 1
+        for item in self.data_lists:
+            embedding, time = self.embed(item)
+            yield embedding, time
+    
+    def __len__(self):
+        return len(self.datasets)
+    
+    def load_datasets(self):
+        for idx in range(1, self.num_data+1):
+            self.data_lists.append(self.read_jsonl(idx))
+    
+    # 每次装载一个结果，选出"prompt"
+    def read_jsonl(self, idx: int):
+        filepath = os.path.join(
+            self.data_dir,
+            f"train_{idx}.jsonl")
+        try:
+            with open(filepath, 'r') as file:
+                line = file.readline()
+                return (json.loads(line))["prompt"]
+        except Exception:
+            print(traceback.format_exc())
+            return None
+    
+    def embed(self, prompt:str) -> List[float]:
+        start = time.time()
+        responses = self.client.embeddings.create(
+            input=[prompt],
+            model=self.model,
+        )
+        end = time.time()
+        return responses.data[0].embedding, (end-start)
 
 # Example 
 if __name__ == "__main__":
