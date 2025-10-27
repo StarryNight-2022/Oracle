@@ -16,7 +16,7 @@ class lable_generator():
     def __init__(self, config:Dict, index_list:List[int], model:str):
         self.benchmark = config["Data"]["benchmark"]
         self.data_dir  = os.path.join(config["Data"]["data_dir"], model)
-        self.num_tokens_range_split = config["Data"]["lables"]["num_tokens_range_split"]
+        self.num_tokens_range_split = config["Data"]["labels"]["num_tokens_range_split"]
         self.data_list = []
         self.index_list = index_list
         self.load_datasets()

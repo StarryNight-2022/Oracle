@@ -9,6 +9,7 @@ import pickle
 import random
 import yaml
 import os
+import joblib
 
 # 自行实现的内容
 from router.models.inputs.offline_embedding import offline_embedding
@@ -58,8 +59,11 @@ if __name__ == "__main__":
     with open(config_file, "r") as f:
         config = yaml.safe_load(f)
         
+    n_neighbors = config["Data"]["labels"]["num_tokens_range_split"]
+        
     model_A = "Qwen3-0.6B-temp-0-no-thinking"   # use its embedding as inputs
-    model_B = "Qwen3-14B-temp-0-no-thinking"    # use its output_length as lables 
+    # model_B = "Qwen3-14B-temp-0-no-thinking"    # use its output_length as lables
+    model_B = "Qwen3-0.6B-temp-0-no-thinking"    # use its output_length as lables
     record = os.path.join(config["Data"]["data_dir"], model_B, "without_outliers.npy")
     index_list = (np.load(record)).tolist()
     
@@ -72,5 +76,17 @@ if __name__ == "__main__":
     # 分割数据
     X_train, X_test, y_train, y_test, train_indices, test_indices = train_test_split(x, y, test_ratio=0.3)
     
-    # 训练KNN模型
-    knn = KNeighborsClassifier(n_neighbors=5)
+    # 实例化KNN模型
+    # knn = KNeighborsClassifier(n_neighbors, weights="distance", metric="cosine", algorithm="brute")
+    knn = KNeighborsClassifier(n_neighbors, weights="distance", metric="minkowski")
+    
+    # train KNN
+    knn.fit(X_train, y_train)
+    
+    # evaluate KNN
+    accuracy = knn.score(X_test, y_test)
+    print(f"模型准确率: {accuracy:.4f}")
+    
+    # 保存模型
+    model_path = 'knn_model.joblib'
+    joblib.dump(knn, model_path)

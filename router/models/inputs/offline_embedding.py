@@ -14,6 +14,7 @@ class offline_embedding():
     # 需要指定index_list参数来确保移除了指定的outliers
     def __init__(self, config:Dict, index_list:List[int], model:str, embedding_model:str = "Qwen3-Embeddings-0.6B", gen:bool=False):
         self.benchmark = config["Data"]["benchmark"]
+        self.num_data = config["Data"]["num_data"]
         ensure_dir(os.path.join(config["Data"]["embeddings_dir"], model))
         self.embeddings_dir = os.path.join(config["Data"]["embeddings_dir"], model, f"{self.benchmark}_embeddings.npy")
         self.model = model
@@ -37,10 +38,13 @@ class offline_embedding():
     def __len__(self):
         return len(self.embedding_list)
     
+    # 对于每一个query都进行生成
     def gen_data(self):
+        # 1, ..., self.num_data + 1
+        full_index_list = np.arange(1, self.num_data + 1).tolist()
         # 获取到在GSM8K数据集上每一条query对应的num_tokens
         idx = 0
-        for embedding, time in tqdm(online_embedding_profile(config, index_list=self.index_list, model=self.model, embedding_model=self.embedding_model)):
+        for embedding, time in tqdm(online_embedding_profile(config, index_list=full_index_list, model=self.model, embedding_model=self.embedding_model)):
             idx += 1
             self.embedding_list.append((idx, time, embedding))
             
@@ -48,9 +52,12 @@ class offline_embedding():
         structured_data = self.list_to_structured_array(self.embedding_list)
         np.save(os.path.join(self.embeddings_dir), structured_data)
     
+    # 参考index_list进行筛选
     def load_data(self):
         loaded_data = np.load(self.embeddings_dir, allow_pickle=True)
-        self.embedding_list = self.structured_array_to_list(loaded_data)
+        temp_embedding_list = self.structured_array_to_list(loaded_data)
+        for index in self.index_list:
+            self.embedding_list.append(temp_embedding_list[index-1])
 
     def list_to_structured_array(self, data: List[Tuple[int, float, List[float]]]) -> np.ndarray:
         """将列表数据转换为结构化数组"""
@@ -94,9 +101,9 @@ if __name__ == "__main__":
     index_list = (np.load(record)).tolist()
     
     # Generate embeddings with vLLM(生成embeddings数据)
-    # tool = offline_embedding(config, index_list, model_A, embedding_model, gen=True)
-    # tool.gen_data()
+    tool = offline_embedding(config, index_list, model_A, embedding_model, gen=True)
+    tool.gen_data()
     
     # 获取到在GSM8K数据集上每一条query对应的num_tokens
-    for idx, time, embedding in offline_embedding(config, index_list, model_A, embedding_model, gen=False):
-        print(idx, time, len(embedding))
+    # for idx, time, embedding in offline_embedding(config, index_list, model_A, embedding_model, gen=False):
+    #     print(idx, time, len(embedding))

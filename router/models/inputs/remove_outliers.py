@@ -54,8 +54,8 @@ class cleaner():
 
 # Example 
 if __name__ == "__main__":
-    # model = "Qwen3-0.6B-temp-0-no-thinking"
-    model = "Qwen3-14B-temp-0-no-thinking"
+    model = "Qwen3-0.6B-temp-0-no-thinking"
+    # model = "Qwen3-14B-temp-0-no-thinking"
     data_dir = "/home/ouyk/project/ICDCS/Oracle/input/GSM8K"
     num_data = 7473
     

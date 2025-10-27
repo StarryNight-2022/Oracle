@@ -3,7 +3,7 @@ Data:
   data_dir: "/home/ouyk/project/ICDCS/Oracle/input/GSM8K"
   num_data: 7473
   embeddings_dir: /home/ouyk/project/ICDCS/Oracle/input/Embeddings/
-  lables:
+  labels:
     num_tokens_range_split: 20
 Models:
   KNN:
