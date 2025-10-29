@@ -12,14 +12,22 @@ from router.utils.tools import ensure_dir
 # 读取提前生成好的npy数据
 class offline_embedding():
     # 需要指定index_list参数来确保移除了指定的outliers
-    def __init__(self, config:Dict, index_list:List[int], model:str, embedding_model:str = "Qwen3-Embeddings-0.6B", gen:bool=False):
+    def __init__(self, config:Dict, index_list:List[int], model:str, input_text:bool = False, output_text:bool = False, embedding_model:str = "Qwen3-Embeddings-0.6B", gen:bool=False):
         self.benchmark = config["Data"]["benchmark"]
         self.num_data = config["Data"]["num_data"]
-        ensure_dir(os.path.join(config["Data"]["embeddings_dir"], model))
-        self.embeddings_dir = os.path.join(config["Data"]["embeddings_dir"], model, f"{self.benchmark}_embeddings.npy")
+        ensure_dir(os.path.join(config["Data"]["embeddings_dir"], embedding_model))
         self.model = model
         self.embedding_model = embedding_model
         self.index_list = index_list
+        self.input = input_text
+        self.output = output_text
+        if self.input and not self.output:    
+            self.embeddings_dir = os.path.join(config["Data"]["embeddings_dir"], embedding_model, f"{self.benchmark}_input_embeddings.npy")
+        elif self.output and not self.input:
+            self.embeddings_dir = os.path.join(config["Data"]["embeddings_dir"], embedding_model, f"{self.benchmark}_{self.model}_output_embeddings.npy")
+        else:
+            raise ValueError("You can only choice one between input_text and output_text!")
+        
         
         self.embedding_list: List[Tuple[int, float, List[float]]] = []
         if gen == False:
@@ -44,7 +52,7 @@ class offline_embedding():
         full_index_list = np.arange(1, self.num_data + 1).tolist()
         # 获取到在GSM8K数据集上每一条query对应的num_tokens
         idx = 0
-        for embedding, time in tqdm(online_embedding_profile(config, index_list=full_index_list, model=self.model, embedding_model=self.embedding_model)):
+        for embedding, time in tqdm(online_embedding_profile(config, index_list=full_index_list, model=self.model, input_text=self.input, output_text=self.output, embedding_model=self.embedding_model)):
             idx += 1
             self.embedding_list.append((idx, time, embedding))
             
@@ -91,7 +99,8 @@ class offline_embedding():
 # 首先调用 online_embedding 生成 embedding，并使用numpy的npy/npz格式存储下来，以备调用。
 if __name__ == "__main__":
     embedding_model="Qwen3-Embeddings-0.6B"
-    config_file = "/home/ouyk/project/ICDCS/Oracle/config/router_model.yaml"
+    config_file = "/home/ouyk/project/ICDCS/Oracle/config/router_model_GSM8K.yaml"
+    # config_file = "/home/ouyk/project/ICDCS/Oracle/config/router_model_Chatbot-Arena.yaml"
     with open(config_file, "r") as f:
         config = yaml.safe_load(f)
     
@@ -101,7 +110,7 @@ if __name__ == "__main__":
     index_list = (np.load(record)).tolist()
     
     # Generate embeddings with vLLM(生成embeddings数据)
-    tool = offline_embedding(config, index_list, model_A, embedding_model, gen=True)
+    tool = offline_embedding(config, index_list, model_A, input_text=False, output_text=True, embedding_model=embedding_model, gen=True)
     tool.gen_data()
     
     # 获取到在GSM8K数据集上每一条query对应的num_tokens

@@ -11,12 +11,14 @@ import numpy as np
 
 class online_embedding():
     # 需要指定index_list参数来确保移除了指定的outliers
-    def __init__(self, config: Dict, index_list:List[int], model:str, embedding_model:str = "Qwen3-Embeddings-0.6B"):
+    def __init__(self, config: Dict, index_list:List[int], model:str, input_text:bool = False, output_text:bool = False, embedding_model:str = "Qwen3-Embeddings-0.6B"):
         self.benchmark = config["Data"]["benchmark"]
         self.num_data  = config["Data"]["num_data"]
         self.data_dir  = os.path.join(config["Data"]["data_dir"], model)
         self.model = embedding_model
         self.index_list = index_list
+        self.input = input_text
+        self.output = output_text
 
         # Embedding API
         self.api_key  = os.environ.get("Local_Embedding_Key")
@@ -50,7 +52,12 @@ class online_embedding():
         try:
             with open(filepath, 'r') as file:
                 line = file.readline()
-                return (json.loads(line))["prompt"]
+                if self.input and not self.output:    
+                    return (json.loads(line))["prompt"]
+                elif self.output and not self.input:
+                    return (json.loads(line))["prompt"]
+                else:
+                    raise ValueError("You can only choice one between input_text and output_text!")
         except Exception:
             print(traceback.format_exc())
             return None
@@ -64,12 +71,14 @@ class online_embedding():
     
 class online_embedding_profile():
     # 需要指定index_list参数来确保移除了指定的outliers
-    def __init__(self, config: Dict, index_list:List[int], model:str, embedding_model:str = "Qwen3-Embeddings-0.6B"):
+    def __init__(self, config: Dict, index_list:List[int], model:str, input_text:bool = False, output_text:bool = False, embedding_model:str = "Qwen3-Embeddings-0.6B"):
         self.benchmark = config["Data"]["benchmark"]
         self.num_data  = config["Data"]["num_data"]
         self.data_dir  = os.path.join(config["Data"]["data_dir"], model)
         self.model = embedding_model
         self.index_list = index_list
+        self.input = input_text
+        self.output = output_text
 
         # Embedding API
         self.api_key  = os.environ.get("Local_Embedding_Key")
@@ -103,7 +112,12 @@ class online_embedding_profile():
         try:
             with open(filepath, 'r') as file:
                 line = file.readline()
-                return (json.loads(line))["prompt"]
+                if self.input and not self.output:    
+                    return (json.loads(line))["prompt"]
+                elif self.output and not self.input:
+                    return (json.loads(line))["prompt"]
+                else:
+                    raise ValueError("You can only choice one between input_text and output_text!")
         except Exception:
             print(traceback.format_exc())
             return None
@@ -120,7 +134,7 @@ class online_embedding_profile():
 # Example 
 if __name__ == "__main__":
     import yaml
-    config_file = "/home/ouyk/project/ICDCS/Oracle/config/router_model.yaml"
+    config_file = "/home/ouyk/project/ICDCS/Oracle/config/router_model_GSM8K.yaml"
     with open(config_file, "r") as f:
         config = yaml.safe_load(f)
     

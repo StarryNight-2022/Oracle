@@ -26,14 +26,17 @@ class KNN():
         return self.model.predict(X_scaled)
     
 class MLP(nn.Module):
-    def __init__(self, input_size:int, output_size:int):
+    def __init__(self, input_size:int, hidden_size:int, output_size:int):
         super(MLP, self).__init__()
-        self.fc1 = nn.Linear(input_size, 128)
+        self.fc1 = nn.Linear(input_size, hidden_size)
+        self.fc2 = nn.Linear(hidden_size, hidden_size)
+        self.fc3 = nn.Linear(hidden_size, output_size)
         self.relu = nn.ReLU()
-        self.fc2 = nn.Linear(128, output_size)
+        self.logsoftmax = nn.LogSoftmax(dim=-1)
     
     def forward(self, x:torch.Tensor):
-        x = self.fc1(x)
-        x = self.relu(x)
-        x = self.fc2(x)
+        x = self.relu(self.fc1(x))
+        x = self.relu(self.fc2(x))
+        x = self.fc3(x)
+        # x = self.logsoftmax(x)
         return x

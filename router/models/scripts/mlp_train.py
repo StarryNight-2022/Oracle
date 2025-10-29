@@ -81,7 +81,7 @@ def train_model(model, train_loader, val_loader, num_epochs=100, learning_rate=0
 def main():
     device = torch.device("cuda:1")
     embedding_model="Qwen3-Embeddings-0.6B"
-    config_file = "/home/ouyk/project/ICDCS/Oracle/config/router_model.yaml"
+    config_file = "/home/ouyk/project/ICDCS/Oracle/config/router_model_GSM8K.yaml"
     with open(config_file, "r") as f:
         config = yaml.safe_load(f)
         
@@ -89,14 +89,15 @@ def main():
     
     # 超参数设置
     input_size = 1024
+    hidden_size = 128
     output_size = n_classes
-    num_epochs = 100
+    num_epochs = 300
     batch_size = 32
-    learning_rate = 0.001
+    learning_rate = 1e-4
         
     model_A = "Qwen3-0.6B-temp-0-no-thinking"   # use its embedding as inputs
-    # model_B = "Qwen3-14B-temp-0-no-thinking"    # use its output_length as lables
-    model_B = "Qwen3-0.6B-temp-0-no-thinking"    # use its output_length as lables
+    model_B = "Qwen3-14B-temp-0-no-thinking"    # use its output_length as lables
+    # model_B = "Qwen3-0.6B-temp-0-no-thinking"    # use its output_length as lables
     record = os.path.join(config["Data"]["data_dir"], model_B, "without_outliers.npy")
     index_list = (np.load(record)).tolist()
     
@@ -117,7 +118,7 @@ def main():
     val_loader = DataLoader(val_dataset, batch_size=batch_size, shuffle=False)
     
     # 初始化模型
-    model = MLP(input_size, output_size).to(device)
+    model = MLP(input_size, hidden_size, output_size).to(device)
     print(model)
     
     # 训练模型

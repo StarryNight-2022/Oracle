@@ -54,10 +54,12 @@ class cleaner():
 
 # Example 
 if __name__ == "__main__":
-    model = "Qwen3-0.6B-temp-0-no-thinking"
-    # model = "Qwen3-14B-temp-0-no-thinking"
-    data_dir = "/home/ouyk/project/ICDCS/Oracle/input/GSM8K"
-    num_data = 7473
+    # model = "Qwen3-0.6B-temp-0-no-thinking"
+    model = "Qwen3-14B-temp-0-no-thinking"
+    # data_dir = "/home/ouyk/project/ICDCS/Oracle/input/GSM8K"
+    data_dir = "/home/ouyk/project/ICDCS/Oracle/input/Chatbot-Arena"
+    # num_data = 7473 # GSM8K
+    num_data = 2586 # Chatbot-Arena
     
     # 获取到在GSM8K数据集上每一条query对应的num_tokens
     tool = cleaner(data_dir, num_data, model)

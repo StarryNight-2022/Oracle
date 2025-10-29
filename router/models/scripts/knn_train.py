@@ -16,7 +16,7 @@ from router.models.scripts.datasets import prepare_training_data, train_test_spl
 
 if __name__ == "__main__":
     embedding_model="Qwen3-Embeddings-0.6B"
-    config_file = "/home/ouyk/project/ICDCS/Oracle/config/router_model.yaml"
+    config_file = "/home/ouyk/project/ICDCS/Oracle/config/router_model_GSM8K.yaml"
     with open(config_file, "r") as f:
         config = yaml.safe_load(f)
         
@@ -29,23 +29,24 @@ if __name__ == "__main__":
     index_list = (np.load(record)).tolist()
     
     # 准备数据
-    x, y, range_dict = prepare_training_data(config, index_list, model_A, model_B, embedding_model)
+    X, y, range_dict = prepare_training_data(config, index_list, model_A, model_B, embedding_model)
     print("range_dict:\n", range_dict)
-    print("length of X:", len(x))
+    print("length of X:", len(X))
     print("length of y:", len(y))
     
     # 分割数据
-    X_train, X_test, y_train, y_test, train_indices, test_indices = train_test_split(x, y, test_ratio=0.2)
+    # X_train, X_test:{"input_embeddings": np.ndarray, "output_embeddings":np.ndarray, "output_tokens":np.ndarray}
+    X_train, X_test, y_train, y_test, train_indices, test_indices = train_test_split(X, y, test_ratio=0.2)
     
     # 实例化KNN模型
     # knn = KNeighborsClassifier(n_neighbors, weights="distance", metric="cosine", algorithm="brute")
     knn = KNeighborsClassifier(n_neighbors, weights="distance", metric="minkowski")
     
     # train KNN
-    knn.fit(X_train, y_train)
+    knn.fit(X_train["input_embeddings"], y_train)
     
     # evaluate KNN
-    accuracy = knn.score(X_test, y_test)
+    accuracy = knn.score(X_test["input_embeddings"], y_test)
     print(f"模型准确率: {accuracy:.4f}")
     
     # 保存模型

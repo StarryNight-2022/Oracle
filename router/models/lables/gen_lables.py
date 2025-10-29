@@ -92,7 +92,7 @@ class lable_generator():
     
 if __name__ == "__main__":
     import yaml
-    config_file = "/home/ouyk/project/ICDCS/Oracle/config/router_model.yaml"
+    config_file = "/home/ouyk/project/ICDCS/Oracle/config/router_model_GSM8K.yaml"
     with open(config_file, "r") as f:
         config = yaml.safe_load(f)
     
@@ -105,4 +105,5 @@ if __name__ == "__main__":
     range_dict, lables = tool.gen_lables(strategy=1)
     
     print("range_dict:", range_dict)
+    print([lable for lable in lables])
     print("length of lables", len(lables))
