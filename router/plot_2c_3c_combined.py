@@ -151,7 +151,6 @@ def main():
     # oracle_output_file = config_basename + f"_{latency_constraint}s-latency-constraint" + ".jsonl"
     # oracle_summary_path = os.path.join(oracle_outputs_dir, oracle_output_file + ".summary.json")
     # 使用正则表达式匹配oracle_outputs_dir路径下格式为 config_basename_XXXs-latency-constraint.jsonl.summary.json 的文件
-    # XXX可能是浮点数
     pattern = re.compile(re.escape(config_basename) + r'_(\d+(?:\.\d+)?)s-latency-constraint\.jsonl\.summary\.json')
     matched_files = [f for f in os.listdir(oracle_outputs_dir) if pattern.match(f)]
 

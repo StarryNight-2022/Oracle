@@ -24,7 +24,6 @@ class Oracle:
         # model size unit is "B" means Billian of params.
         self.model_size = model_size
     
-    # TODO: Need modify
     def get_oracle(self, results: Dict[str, Any], latency_constraint: Union[float, int, None], choice: int) -> Dict[str, Any]:  # 延迟限制的单位为秒:second
         # The 1st strategy without latency constraint
         if choice == 0:

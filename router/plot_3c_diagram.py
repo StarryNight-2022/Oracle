@@ -74,7 +74,6 @@ def get_metric_for_model(summary: Dict[str, Any], model: str):
 
     return sel, accuracy, avg_latency, avg_tokens
 
-# TODO: Modify that method
 def plot_metric(vals: List[Tuple[float, float]], xlabel: str, ylabel: str, title: str, out_path: str):
     plt.figure(figsize=(8, 6))
     x_vals = [item[0] for item in vals]
@@ -147,7 +146,6 @@ def main():
     
     oracle_summary_outputs_dir = os.path.join(runtime_dir, "outputs", f"{benchmark}", "oracle", f"strategy_{args.choice}", "3c_plot")
 
-    # TODO: Choose the max latency
     max_latency_list: List[float] = []
     for model in Models:
         model_path = os.path.join(workspace, model)

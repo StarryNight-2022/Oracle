@@ -107,7 +107,6 @@ def plot_metric(x_vals: List[float], y_vals: List[float], oracle_x: float, oracl
     plt.savefig(out_path, dpi=300)
     plt.close()
 
-# TODO: 绘制表格
 def plot_chart(data: pd.DataFrame, out_path: str):
     # 使用styler来渲染表格，它会自动处理索引
     fig, ax = plt.subplots(figsize=(8, len(data)*0.5 + 1))
