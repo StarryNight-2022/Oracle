@@ -91,7 +91,7 @@ def main():
     input_size = 1024
     hidden_size = 128
     output_size = n_classes
-    num_epochs = 300
+    num_epochs = 100
     batch_size = 32
     learning_rate = 1e-4
         
@@ -101,18 +101,20 @@ def main():
     record = os.path.join(config["Data"]["data_dir"], model_B, "without_outliers.npy")
     index_list = (np.load(record)).tolist()
     
-    # 准备数据
-    x, y, range_dict = prepare_training_data(config, index_list, model_A, model_B, embedding_model)
+    # 准备数据 lable_strategy: 0->Fixed Intervals, 1->Flexible Intervals
+    X, y, range_dict = prepare_training_data(config, index_list, model_A, model_B, embedding_model, lable_strategy=1)
     print("range_dict:\n", range_dict)
-    print("length of X:", len(x))
-    print("length of y:", len(y))
+    print("input_embeddings shape:", (X["input_embeddings"].shape))
+    print("output_embeddings shape:", (X["output_embeddings"].shape))
+    print("output_tokens shape:", (X["output_tokens"].shape))
     
     # 分割数据
-    X_train, X_test, y_train, y_test, train_indices, test_indices = train_test_split(x, y, test_ratio=0.3)
+    # X_train, X_test:{"input_embeddings": np.ndarray, "output_embeddings":np.ndarray, "output_tokens":np.ndarray}
+    X_train, X_test, y_train, y_test, _, _ = train_test_split(X, y, test_ratio=0.2)
     
     # 转换为TensorDataset
-    train_dataset = TensorDataset(torch.tensor(X_train, dtype=torch.float32), torch.tensor(y_train, dtype=torch.long))
-    val_dataset = TensorDataset(torch.tensor(X_test, dtype=torch.float32), torch.tensor(y_test, dtype=torch.long))
+    train_dataset = TensorDataset(torch.tensor(X_train["input_embeddings"], dtype=torch.float32), torch.tensor(y_train, dtype=torch.long))
+    val_dataset = TensorDataset(torch.tensor(X_test["input_embeddings"], dtype=torch.float32), torch.tensor(y_test, dtype=torch.long))
     
     train_loader = DataLoader(train_dataset, batch_size=batch_size, shuffle=True)
     val_loader = DataLoader(val_dataset, batch_size=batch_size, shuffle=False)

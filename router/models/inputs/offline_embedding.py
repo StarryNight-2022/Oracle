@@ -23,8 +23,16 @@ class offline_embedding():
         self.output = output_text
         if self.input and not self.output:    
             self.embeddings_dir = os.path.join(config["Data"]["embeddings_dir"], embedding_model, f"{self.benchmark}_input_embeddings.npy")
+            if gen:
+                print(f"writing {self.benchmark}_input_embeddings.npy")
+            else:
+                print(f"loading {self.benchmark}_input_embeddings.npy")
         elif self.output and not self.input:
             self.embeddings_dir = os.path.join(config["Data"]["embeddings_dir"], embedding_model, f"{self.benchmark}_{self.model}_output_embeddings.npy")
+            if gen:
+                print(f"writing {self.benchmark}_{self.model}_output_embeddings.npy")
+            else: 
+                print(f"loading {self.benchmark}_{self.model}_output_embeddings.npy")
         else:
             raise ValueError("You can only choice one between input_text and output_text!")
         

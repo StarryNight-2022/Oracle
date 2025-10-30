@@ -4,7 +4,7 @@ Data:
   num_data: 7473
   embeddings_dir: /home/ouyk/project/ICDCS/Oracle/input/Embeddings/
   labels:
-    num_tokens_range_split: 16
+    num_tokens_range_split: 8
 Models:
   KNN:
     n_neighbors: 5

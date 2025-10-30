@@ -5,11 +5,11 @@ import random
 # 自行实现的内容
 from router.models.inputs.offline_embedding import offline_embedding
 from router.models.inputs.offline_num_tokens import offline_tokens
-from router.models.lables.gen_lables import lable_generator
+from router.models.lables.two_steps.output_tokens import lable_generator
 
 random_seed = 2025
 
-def prepare_training_data(config:Dict, index_list:List[int], model_A:str, model_B:str, embedding_model:str) -> Tuple[Dict[str, np.ndarray], Dict, np.ndarray]:
+def prepare_training_data(config:Dict, index_list:List[int], model_A:str, model_B:str, embedding_model:str, lable_strategy:int) -> Tuple[Dict[str, np.ndarray], Dict, np.ndarray]:
     in_embedding_list = []
     out_embedding_list = []
     num_tokens_list = []
@@ -19,18 +19,18 @@ def prepare_training_data(config:Dict, index_list:List[int], model_A:str, model_
     x_in = np.array(in_embedding_list)
     
     # 获取到在GSM8K数据集上model_A每一条output对应的embedding
-    for idx, time, embedding in offline_embedding(config, index_list, model_A, input_text=True, output_text=False, embedding_model=embedding_model, gen=False):
+    for idx, time, embedding in offline_embedding(config, index_list, model_A, input_text=False, output_text=True, embedding_model=embedding_model, gen=False):
         out_embedding_list.append(embedding)
     x_out = np.array(out_embedding_list)
     
     # 获取到在GSM8K数据集上model_A每一条query对应的输出tokens数量
     for data in offline_tokens(config, index_list, model_A):
         num_tokens_list.append(data)
-    x_tokens = np.array(num_tokens_list)
+    x_tokens = np.array(num_tokens_list).reshape(-1, 1)
     
     # 获取model_B输出tokens数量的分类标签
     tool = lable_generator(config, index_list, model_B)
-    range_dict, lables = tool.gen_lables(strategy=1)
+    range_dict, lables = tool.gen_lables(strategy=lable_strategy)
     
     x = {"input_embeddings": x_in, "output_embeddings":x_out, "output_tokens":x_tokens}
     
@@ -44,7 +44,7 @@ def train_test_split(X: Dict[str, np.ndarray], y: np.ndarray, test_ratio: float 
     random.seed(random_seed)
     np.random.seed(random_seed)
 
-    n_samples = len(X)
+    n_samples = len(X["input_embeddings"])
     n_test = int(n_samples * test_ratio)
 
     # 随机打乱索引

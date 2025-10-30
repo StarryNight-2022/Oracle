@@ -28,15 +28,16 @@ if __name__ == "__main__":
     record = os.path.join(config["Data"]["data_dir"], model_B, "without_outliers.npy")
     index_list = (np.load(record)).tolist()
     
-    # 准备数据
-    X, y, range_dict = prepare_training_data(config, index_list, model_A, model_B, embedding_model)
+    # 准备数据 lable_strategy: 0->Fixed Intervals, 1->Flexible Intervals
+    X, y, range_dict = prepare_training_data(config, index_list, model_A, model_B, embedding_model, lable_strategy=1)
     print("range_dict:\n", range_dict)
-    print("length of X:", len(X))
-    print("length of y:", len(y))
+    print("input_embeddings shape:", (X["input_embeddings"].shape))
+    print("output_embeddings shape:", (X["output_embeddings"].shape))
+    print("output_tokens shape:", (X["output_tokens"].shape))
     
     # 分割数据
     # X_train, X_test:{"input_embeddings": np.ndarray, "output_embeddings":np.ndarray, "output_tokens":np.ndarray}
-    X_train, X_test, y_train, y_test, train_indices, test_indices = train_test_split(X, y, test_ratio=0.2)
+    X_train, X_test, y_train, y_test, _, _ = train_test_split(X, y, test_ratio=0.2)
     
     # 实例化KNN模型
     # knn = KNeighborsClassifier(n_neighbors, weights="distance", metric="cosine", algorithm="brute")

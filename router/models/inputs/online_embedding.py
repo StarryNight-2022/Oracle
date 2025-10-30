@@ -115,7 +115,7 @@ class online_embedding_profile():
                 if self.input and not self.output:    
                     return (json.loads(line))["prompt"]
                 elif self.output and not self.input:
-                    return (json.loads(line))["prompt"]
+                    return (json.loads(line))["full_response"]
                 else:
                     raise ValueError("You can only choice one between input_text and output_text!")
         except Exception:

@@ -59,7 +59,7 @@ class lable_generator():
             lower_bound = intervals[i]
             upper_bound = intervals[i + 1]
             range_dict[i] = (lower_bound, upper_bound)
-            for j, length in enumerate(self.data_lists):
+            for j, length in enumerate(self.data_list):
                 if lower_bound <= length < upper_bound:
                     lables[j] = i
         return range_dict, lables
