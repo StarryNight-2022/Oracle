@@ -1,5 +1,5 @@
 # constructing our router model
-from typing import List, Union
+from typing import List, Union, Any
 import numpy as np
 #---------------------- KNN -----------------------
 from sklearn.neighbors import KNeighborsClassifier
@@ -28,59 +28,82 @@ class KNN():
         return self.model.predict(X_scaled)
     
 class MLP(nn.Module):
-    def __init__(self, input_size:int, hidden_size:int, output_size:int):
+    def __init__(self, input_size:int, hidden_size:int, output_size:int, device:torch.device):
         super(MLP, self).__init__()
-        self.fc1 = nn.Linear(input_size, hidden_size)
-        self.fc2 = nn.Linear(hidden_size, hidden_size)
-        self.fc3 = nn.Linear(hidden_size, output_size)
-        self.relu = nn.ReLU()
-        self.logsoftmax = nn.LogSoftmax(dim=-1)
+        self.fc1 = nn.Linear(input_size, hidden_size).to(device)
+        self.fc2 = nn.Linear(hidden_size, hidden_size).to(device)
+        self.fc3 = nn.Linear(hidden_size, output_size).to(device)
+        self.relu = nn.ReLU().to(device)
     
     def forward(self, x:torch.Tensor):
         x = self.relu(self.fc1(x))
         x = self.relu(self.fc2(x))
         x = self.fc3(x)
-        # x = self.logsoftmax(x)
         return x
     
 class Bert_MLP(nn.Module):
     # "/home/ouyk/project/ICDCS/Oracle/model/Bert_Base"
     def __init__(self, 
                  bert_dir:str, 
+                 classifier_dir:str,
                  bert_hidden_dim:int, 
                  hidden_size:int, 
-                 output_size:int, 
-                 device:torch.device):
+                 output_size:int,
+                 device:torch.device,
+                 dtype:torch.dtype,
+                 fine_tune:bool):
         super(Bert_MLP, self).__init__()
         self.device = device
         
-        # 预训练的Bert模型相关内容
-        self.tokenizer = AutoTokenizer.from_pretrained(
-            bert_dir,
-        )
+        if self.train:
+            pass
+        elif self.eval:
+            # 预训练的Bert模型相关内容
+            self.tokenizer = AutoTokenizer.from_pretrained(
+                bert_dir,
+            )
+        else:
+            raise ValueError("The model can only be one of training mode or evaluating mode!")
         # 预训练的Bert模型
         self.bert = BertModel.from_pretrained(
             bert_dir,
-            dtype=torch.float16,
+            dtype=dtype,
             attn_implementation="sdpa"
         ).to(self.device)
         
+        if fine_tune == True:
+            self.bert.train()
+        elif fine_tune == False:
+            # 冻结bert的参数
+            for name, param in self.bert.named_parameters():
+                param.requires_grad = False
+            self.bert.eval()
+        else:
+            raise ValueError(f"param fine_tune can't be {fine_tune}")
+        
         self.dropout = nn.Dropout(0.1)   # 仅在训练过程有效
         
-        self.fc1 = nn.Linear(bert_hidden_dim, hidden_size, dtype=torch.float16).to(self.device)
-        self.fc2 = nn.Linear(hidden_size, hidden_size, dtype=torch.float16).to(self.device)
-        self.fc3 = nn.Linear(hidden_size, output_size, dtype=torch.float16).to(self.device)
-        self.relu = nn.ReLU().to(self.device)
-
-    def classifier(self, x):
-        x = self.relu(self.fc1(x))
-        x = self.relu(self.fc2(x))
-        x = self.fc3(x)
-        return x
+        self.classifier = MLP(input_size=bert_hidden_dim,
+                                hidden_size=hidden_size,
+                                output_size=output_size,
+                                device=self.device,
+                                dtype=dtype).train()
         
-    def forward(self, query:str):
-        input_ids = self.tokenizer(query, return_tensors="pt").to(self.device)
-        bert_outputs = self.bert(**input_ids)
+        # Evaluate
+        if classifier_dir != "":
+            self.classifier.load_state_dict(classifier_dir)
+            self.classifier.eval()
+        
+    def forward(self, inputs:Union[str, Any]):
+        if self.train:
+            input_ids = inputs
+        elif self.eval:
+            input_ids = self.tokenizer(inputs, return_tensors="pt").to(self.device)
+        else:
+            raise ValueError("The model can only be one of training mode or evaluating mode!")
+        
+        # NOTE: Maybe there are some problems in training. Will fix when appear.
+        bert_outputs = self.bert(**input_ids) 
         pooled_output = bert_outputs[1]
         pooled_output = self.dropout(pooled_output)
         logits = self.classifier(pooled_output)

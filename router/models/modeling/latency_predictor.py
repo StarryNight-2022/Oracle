@@ -7,6 +7,7 @@ from router.models.modeling.modeling import Bert_MLP
 device = torch.device("cuda:1")
 
 predictor = Bert_MLP(bert_dir="/home/ouyk/project/ICDCS/Oracle/model/Bert_Base",
+                     classifier_dir="",
                      bert_hidden_dim=768,
                      hidden_size=192,
                      output_size=16,
