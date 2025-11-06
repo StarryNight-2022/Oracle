@@ -1,10 +1,11 @@
 Data:
   benchmark: "Chatbot-Arena"
-  data_dir: "/home/ouyk/project/ICDCS/Oracle/input/Chatbot-Arena"
+  data_dir: "/home/ouyk/project/ICDCS/Oracle/input/A100/Chatbot-Arena"
   num_data: 2586
-  embeddings_dir: /home/ouyk/project/ICDCS/Oracle/input/Embeddings/
+  embeddings_dir: "/home/ouyk/project/ICDCS/Oracle/input/A100/Embeddings/"
   labels:
     num_tokens_range_split: 16
+    latency_range_split: 16
 Models:
   KNN:
     n_neighbors: 5

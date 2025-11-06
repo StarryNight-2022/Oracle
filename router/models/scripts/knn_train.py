@@ -23,17 +23,23 @@ if __name__ == "__main__":
     n_neighbors = config["Data"]["labels"]["num_tokens_range_split"]
         
     model_A = "Qwen3-0.6B-temp-0-no-thinking"   # use its embedding as inputs
-    model_B = "Qwen3-14B-temp-0-no-thinking"    # use its output_length as lables
-    # model_B = "Qwen3-0.6B-temp-0-no-thinking"    # use its output_length as lables
+    # model_B = "Qwen3-14B-temp-0-no-thinking"    # use its output_length as lables
+    model_B = "Qwen3-0.6B-temp-0-no-thinking"    # use its output_length as lables
     record = os.path.join(config["Data"]["data_dir"], model_B, "without_outliers.npy")
     index_list = (np.load(record)).tolist()
+    data_require = {
+        "input_embeddings": True,
+        "output_embeddings": False,
+        "output_tokens": False,
+        "latency": True,
+        "output_tokens_label": False,
+        "latency_label": True,
+    }
     
     # 准备数据 lable_strategy: 0->Fixed Intervals, 1->Flexible Intervals
-    X, y, range_dict = prepare_training_data(config, index_list, model_A, model_B, embedding_model, lable_strategy=1)
-    print("range_dict:\n", range_dict)
-    print("input_embeddings shape:", (X["input_embeddings"].shape))
-    print("output_embeddings shape:", (X["output_embeddings"].shape))
-    print("output_tokens shape:", (X["output_tokens"].shape))
+    X, Y, range_dict = prepare_training_data(config, index_list, model_A, model_B, embedding_model, data_require=data_require, lable_strategy=2)
+    
+    y = Y["latency"]
     
     # 分割数据
     # X_train, X_test:{"input_embeddings": np.ndarray, "output_embeddings":np.ndarray, "output_tokens":np.ndarray}

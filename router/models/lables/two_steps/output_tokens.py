@@ -11,7 +11,7 @@ import json
 import traceback
 import numpy as np
 
-class lable_generator():
+class label_generator():
     # 需要指定index_list参数来确保移除了指定的outliers
     def __init__(self, config:Dict, index_list:List[int], model:str):
         self.benchmark = config["Data"]["benchmark"]
@@ -44,7 +44,7 @@ class lable_generator():
         elif strategy == 1:
             range_dict, lables = self.strategy_1()
         else:
-            raise ValueError(f"Don't supports strategy:{strategy}")
+            raise ValueError(f"{os.path.abspath(__file__)}: Output tokens label generator don't supports strategy:{strategy}")
         return range_dict, lables
     
     # Fixed interval.
@@ -92,6 +92,8 @@ class lable_generator():
     
 if __name__ == "__main__":
     import yaml
+    from router.utils.tools import plot_histogram
+    
     config_file = "/home/ouyk/project/ICDCS/Oracle/config/router_model_GSM8K.yaml"
     with open(config_file, "r") as f:
         config = yaml.safe_load(f)
@@ -101,9 +103,13 @@ if __name__ == "__main__":
     record = os.path.join(config["Data"]["data_dir"], model, "without_outliers.npy")
     index_list = (np.load(record)).tolist()
     
-    tool = lable_generator(config, index_list, model)
-    range_dict, lables = tool.gen_lables(strategy=1)
+    strategy = 1
+    
+    tool = label_generator(config, index_list, model)
+    range_dict, lables = tool.gen_lables(strategy)
     
     print("range_dict:", range_dict)
     print([lable for lable in lables])
     print("length of lables", len(lables))
+    
+    plot_histogram(lables, range_dict, title=f"output tokens lable strategy_{strategy}", save_dir="/home/ouyk/project/ICDCS/Oracle/router/models/lables/two_steps/Hist")

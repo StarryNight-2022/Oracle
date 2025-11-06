@@ -9,9 +9,10 @@ import time
 import numpy as np
 
 class cleaner():
-    def __init__(self, data_dir:str, num_data:int, model):
+    def __init__(self, data_dir:str, num_data:int, model:str, key:str):
         self.data_dir = os.path.join(data_dir, model)
         self.num_data = num_data
+        self.key = key
         
         self.data_lists:List[Tuple[int, int]] = []
         self.load_datasets()
@@ -20,7 +21,7 @@ class cleaner():
         for idx in range(1, self.num_data+1):
             self.data_lists.append((idx, self.read_jsonl(idx)))
     
-    # 仅读取 "length_of_output_token_ids"
+    # 仅读取 self.key
     def read_jsonl(self, idx: int):
         filepath = os.path.join(
             self.data_dir,
@@ -28,7 +29,7 @@ class cleaner():
         try:
             with open(filepath, 'r') as file:
                 line = file.readline()
-                return (json.loads(line)["length_of_output_token_ids"])
+                return (json.loads(line)[self.key])
         except Exception:
             print(traceback.format_exc())
             return None
@@ -61,6 +62,10 @@ if __name__ == "__main__":
     # num_data = 7473 # GSM8K
     num_data = 2586 # Chatbot-Arena
     
-    # 获取到在GSM8K数据集上每一条query对应的num_tokens
-    tool = cleaner(data_dir, num_data, model)
+    # 获取到在GSM8K数据集上每一条query对应的num_tokens，针对"length_of_output_token_ids"进行过滤
+    tool = cleaner(data_dir, num_data, model, key="length_of_output_token_ids")
+    tool.remove(threshold=3.0)
+    
+    # 获取到在GSM8K数据集上每一条query对应的num_tokens，针对runtime进行过滤
+    tool = cleaner(data_dir, num_data, model, key="runtime")
     tool.remove(threshold=3.0)
