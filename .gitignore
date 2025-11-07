@@ -24,3 +24,4 @@ raw_input/*
 *.env
 export_env_params.sh
 model/*
+logs/*

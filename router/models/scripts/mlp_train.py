@@ -9,7 +9,7 @@ import numpy as np
 
 # 自定义内容
 from router.models.modeling.modeling import MLP
-from router.models.scripts.datasets import prepare_training_data, train_test_split
+from router.models.scripts.dataset.our_datasets import prepare_training_data, train_test_split
 
 # 训练函数
 def train_model(model, train_loader, val_loader, num_epochs=100, learning_rate=0.001, device="cpu"):

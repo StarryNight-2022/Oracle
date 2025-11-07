@@ -12,7 +12,7 @@ import joblib
 import matplotlib.pyplot as plt
 
 # 自行实现的内容
-from router.models.scripts.datasets import prepare_training_data, train_test_split
+from router.models.scripts.dataset.our_datasets import prepare_training_data, train_test_split
 
 if __name__ == "__main__":
     embedding_model="Qwen3-Embeddings-0.6B"

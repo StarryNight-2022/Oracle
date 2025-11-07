@@ -1,8 +1,11 @@
 from typing import List, Union, Tuple, Dict
 import numpy as np
 import random
+import datasets
+import os
 
 # 自行实现的内容
+from router.models.inputs.queries import queries
 from router.models.inputs.offline_embedding import offline_embedding
 from router.models.inputs.offline_num_tokens import offline_tokens
 from router.models.inputs.offline_latency import offline_latency
@@ -99,17 +102,52 @@ def train_test_split(X: Dict[str, np.ndarray], y: np.ndarray, test_ratio: float 
         train_dict[key] = x_train
         test_dict[key] = x_test
     
-    # x0_train = X["input_embeddings"][train_indices]
-    # x1_train = X["output_embeddings"][train_indices]
-    # x2_train = X["output_tokens"][train_indices]
-    # x0_test  = X["input_embeddings"][test_indices]
-    # x1_test  = X["output_embeddings"][test_indices]
-    # x2_test  = X["output_tokens"][test_indices]
-    
     return (
-        # {"input_embeddings": x0_train, "output_embeddings":x1_train, "output_tokens":x2_train}, 
-        # {"input_embeddings": x0_test, "output_embeddings":x1_test, "output_tokens":x2_test},
         train_dict, test_dict,
         y[train_indices], y[test_indices],
         np.array(train_indices), np.array(test_indices)
     )
+
+def gen_fine_tuning_data(config:Dict, index_list:List[int], model_A:str, model_B:str, lable_strategy:int, test_ratio:float, save_dir:str):
+    # List[List[str, int]]
+    query = []
+    train_samples: List[List[str, int]] = []
+    test_samples: List[List[str, int]] = []
+    
+    # input: 模型A的prompts
+    for data in queries(config, index_list, model_A):
+        query.append(data)
+    
+    # label: 模型B的tokens_label
+    tool = tokens_label_generator(config, index_list, model_B)
+    range_dict, labels = tool.gen_lables(strategy=lable_strategy)
+    
+    # label: 模型B的latency_label
+    # tool = latency_label_generator(config, index_list, model_B)
+    # range_dict, labels = tool.gen_lables(strategy=lable_strategy)
+    
+    # 切分
+    random.seed(random_seed)
+    np.random.seed(random_seed)
+
+    n_samples = len(index_list)
+    n_test = int(n_samples * test_ratio)
+
+    # 随机打乱索引
+    indices = list(range(n_samples))
+    
+    random.shuffle(indices)
+    
+    train_indices = indices[n_test:]
+    test_indices = indices[:n_test]
+    
+    for idx in train_indices:
+        train_samples.append([query[idx], labels[idx]])
+        
+    for idx in test_indices:
+        test_samples.append([query[idx], labels[idx]])
+    
+    # 保存为npy文件
+    np.save(os.path.join(save_dir ,'train_data.npy'), np.array(train_samples, dtype=object))
+    np.save(os.path.join(save_dir ,'test_data.npy'), np.array(test_samples, dtype=object))
+    print("数据集创建完成！")

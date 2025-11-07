@@ -1,5 +1,5 @@
 # constructing our router model
-from typing import List, Union, Any
+from typing import List, Union, Any, Optional
 import numpy as np
 #---------------------- KNN -----------------------
 from sklearn.neighbors import KNeighborsClassifier
@@ -28,11 +28,11 @@ class KNN():
         return self.model.predict(X_scaled)
     
 class MLP(nn.Module):
-    def __init__(self, input_size:int, hidden_size:int, output_size:int, device:torch.device):
+    def __init__(self, input_size:int, hidden_size:int, output_size:int, device:torch.device, dtype:torch.dtype):
         super(MLP, self).__init__()
-        self.fc1 = nn.Linear(input_size, hidden_size).to(device)
-        self.fc2 = nn.Linear(hidden_size, hidden_size).to(device)
-        self.fc3 = nn.Linear(hidden_size, output_size).to(device)
+        self.fc1 = nn.Linear(input_size, hidden_size, dtype=dtype).to(device)
+        self.fc2 = nn.Linear(hidden_size, hidden_size, dtype=dtype).to(device)
+        self.fc3 = nn.Linear(hidden_size, output_size, dtype=dtype).to(device)
         self.relu = nn.ReLU().to(device)
     
     def forward(self, x:torch.Tensor):
@@ -94,16 +94,31 @@ class Bert_MLP(nn.Module):
             self.classifier.load_state_dict(classifier_dir)
             self.classifier.eval()
         
-    def forward(self, inputs:Union[str, Any]):
-        if self.train:
-            input_ids = inputs
-        elif self.eval:
-            input_ids = self.tokenizer(inputs, return_tensors="pt").to(self.device)
-        else:
-            raise ValueError("The model can only be one of training mode or evaluating mode!")
+    def forward(self,
+                input_ids: Optional[torch.Tensor] = None,
+                attention_mask: Optional[torch.Tensor] = None,
+                token_type_ids: Optional[torch.Tensor] = None,
+                position_ids: Optional[torch.Tensor] = None,
+                head_mask: Optional[torch.Tensor] = None,
+                inputs_embeds: Optional[torch.Tensor] = None,
+                labels: Optional[torch.Tensor] = None,
+                output_attentions: Optional[bool] = None,
+                output_hidden_states: Optional[bool] = None,
+                return_dict: Optional[bool] = None,):
+        
+        input_ids.to(self.device)
         
         # NOTE: Maybe there are some problems in training. Will fix when appear.
-        bert_outputs = self.bert(**input_ids) 
+        bert_outputs = self.bert(input_ids,
+                                attention_mask,
+                                token_type_ids,
+                                position_ids,
+                                head_mask,
+                                inputs_embeds,
+                                labels,
+                                output_attentions,
+                                output_hidden_states,
+                                return_dict,) 
         pooled_output = bert_outputs[1]
         pooled_output = self.dropout(pooled_output)
         logits = self.classifier(pooled_output)

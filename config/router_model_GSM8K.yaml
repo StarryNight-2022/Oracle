@@ -10,3 +10,5 @@ Models:
   KNN:
     n_neighbors: 5
   MLP:
+Bert_Fine_Tuning:
+  data_save_dir: "/home/ouyk/project/ICDCS/Oracle/input/Fine_Tuning"
