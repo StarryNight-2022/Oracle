@@ -30,96 +30,49 @@ class KNN():
 class MLP(nn.Module):
     def __init__(self, input_size:int, hidden_size:int, output_size:int, device:torch.device, dtype:torch.dtype):
         super(MLP, self).__init__()
-        self.fc1 = nn.Linear(input_size, hidden_size, dtype=dtype).to(device)
-        self.fc2 = nn.Linear(hidden_size, hidden_size, dtype=dtype).to(device)
-        self.fc3 = nn.Linear(hidden_size, output_size, dtype=dtype).to(device)
-        self.relu = nn.ReLU().to(device)
+        self.fc1 = nn.Linear(input_size, hidden_size, device=device, dtype=dtype)
+        self.fc2 = nn.Linear(hidden_size, hidden_size, device=device, dtype=dtype)
+        self.fc3 = nn.Linear(hidden_size, output_size, device=device, dtype=dtype)
+        self.relu = nn.ReLU()
     
-    def forward(self, x:torch.Tensor):
+    def forward(self, x:torch.Tensor)->torch.Tensor:
         x = self.relu(self.fc1(x))
         x = self.relu(self.fc2(x))
         x = self.fc3(x)
         return x
     
-class Bert_MLP(nn.Module):
-    # "/home/ouyk/project/ICDCS/Oracle/model/Bert_Base"
+class Bert(nn.Module):
+    # "/home/ouyk/project/ICDCS/Oracle/model/Fine_Tuned"
     def __init__(self, 
                  bert_dir:str, 
-                 classifier_dir:str,
-                 bert_hidden_dim:int, 
-                 hidden_size:int, 
-                 output_size:int,
                  device:torch.device,
-                 dtype:torch.dtype,
-                 fine_tune:bool):
-        super(Bert_MLP, self).__init__()
+                 dtype:torch.dtype):
+        super(Bert, self).__init__()
         self.device = device
         
-        if self.train:
-            pass
-        elif self.eval:
-            # 预训练的Bert模型相关内容
-            self.tokenizer = AutoTokenizer.from_pretrained(
-                bert_dir,
-            )
-        else:
-            raise ValueError("The model can only be one of training mode or evaluating mode!")
+        self.tokenizer = AutoTokenizer.from_pretrained(
+            "/home/ouyk/project/ICDCS/Oracle/model/Bert_Base"
+        )
+        
         # 预训练的Bert模型
         self.bert = BertModel.from_pretrained(
             bert_dir,
             dtype=dtype,
             attn_implementation="sdpa"
         ).to(self.device)
+
+        # 冻结bert的参数
+        for name, param in self.bert.named_parameters():
+            param.requires_grad = False
+        self.bert.eval()
         
-        if fine_tune == True:
-            self.bert.train()
-        elif fine_tune == False:
-            # 冻结bert的参数
-            for name, param in self.bert.named_parameters():
-                param.requires_grad = False
-            self.bert.eval()
-        else:
-            raise ValueError(f"param fine_tune can't be {fine_tune}")
+    def forward(self, prompt:str):
         
-        self.dropout = nn.Dropout(0.1)   # 仅在训练过程有效
-        
-        self.classifier = MLP(input_size=bert_hidden_dim,
-                                hidden_size=hidden_size,
-                                output_size=output_size,
-                                device=self.device,
-                                dtype=dtype).train()
-        
-        # Evaluate
-        if classifier_dir != "":
-            self.classifier.load_state_dict(classifier_dir)
-            self.classifier.eval()
-        
-    def forward(self,
-                input_ids: Optional[torch.Tensor] = None,
-                attention_mask: Optional[torch.Tensor] = None,
-                token_type_ids: Optional[torch.Tensor] = None,
-                position_ids: Optional[torch.Tensor] = None,
-                head_mask: Optional[torch.Tensor] = None,
-                inputs_embeds: Optional[torch.Tensor] = None,
-                labels: Optional[torch.Tensor] = None,
-                output_attentions: Optional[bool] = None,
-                output_hidden_states: Optional[bool] = None,
-                return_dict: Optional[bool] = None,):
-        
-        input_ids.to(self.device)
+        inputs = self.tokenizer(prompt, return_tensors="pt").to(self.device)
         
         # NOTE: Maybe there are some problems in training. Will fix when appear.
-        bert_outputs = self.bert(input_ids,
-                                attention_mask,
-                                token_type_ids,
-                                position_ids,
-                                head_mask,
-                                inputs_embeds,
-                                labels,
-                                output_attentions,
-                                output_hidden_states,
-                                return_dict,) 
+        with torch.no_grad():
+            bert_outputs = self.bert(**inputs) 
         pooled_output = bert_outputs[1]
-        pooled_output = self.dropout(pooled_output)
-        logits = self.classifier(pooled_output)
-        return logits
+
+        return pooled_output

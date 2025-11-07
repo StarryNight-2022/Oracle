@@ -12,7 +12,7 @@ class Fine_Tuning_Dataset(datasets.GeneratorBasedBuilder):
             description="Bert fine-tuning dataset",
             features=datasets.Features({
                 "prompt": datasets.Value("string"),
-                "label": datasets.ClassLabel(num_classes=16)
+                "labels": datasets.ClassLabel(num_classes=16)
             })
         )
 
@@ -35,7 +35,7 @@ class Fine_Tuning_Dataset(datasets.GeneratorBasedBuilder):
     def _generate_examples(self, file_path):
         data = np.load(file_path, allow_pickle=True)
         for idx, row in enumerate(data):
-            yield idx, {"prompt": row[0], "label": row[1]}
+            yield idx, {"prompt": row[0], "labels": row[1]}
             
 if __name__ == "__main__":
     from datasets import load_dataset

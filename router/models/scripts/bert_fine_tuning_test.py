@@ -4,6 +4,7 @@
 # And there are a few problem to figure out:
 # Q1: What dataset we gonna use? A paper used LMSYS-Chat-1M dataset.
 # Q2: The format of dataset? queries and labels.
+# 具身智能当前的模型运算算力主要如何保障（纯边端、还是纯云端、还是云边协同）？对边缘计算的计算效率(响应速度、本地化、能耗)存在怎样的需求？ nanoVLA (所以说VLA等多模态模型的边缘场景加速存在较大的空白)
 
 # Answer: 
 # For Q1: We can try GSM8K first, if the results is not so good we can try LMSYS-Chat-1M.
