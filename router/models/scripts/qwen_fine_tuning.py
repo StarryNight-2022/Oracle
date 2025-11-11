@@ -1,0 +1,1 @@
+# 类似于 bert_fine_tuning.py，可以考虑对 qwen3-embedding-0.6B 进行微调。

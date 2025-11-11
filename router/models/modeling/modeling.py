@@ -27,18 +27,28 @@ class KNN():
             
         return self.model.predict(X_scaled)
     
+# class MLP(nn.Module):
+#     def __init__(self, input_size:int, hidden_size:int, output_size:int, device:torch.device, dtype:torch.dtype):
+#         super(MLP, self).__init__()
+#         self.fc1 = nn.Linear(input_size, hidden_size, device=device, dtype=dtype)
+#         self.fc2 = nn.Linear(hidden_size, hidden_size, device=device, dtype=dtype)
+#         self.fc3 = nn.Linear(hidden_size, output_size, device=device, dtype=dtype)
+#         self.relu = nn.ReLU()
+    
+#     def forward(self, x:torch.Tensor)->torch.Tensor:
+#         x = self.relu(self.fc1(x))
+#         x = self.relu(self.fc2(x))
+#         x = self.fc3(x)
+#         return x
+
 class MLP(nn.Module):
     def __init__(self, input_size:int, hidden_size:int, output_size:int, device:torch.device, dtype:torch.dtype):
         super(MLP, self).__init__()
-        self.fc1 = nn.Linear(input_size, hidden_size, device=device, dtype=dtype)
-        self.fc2 = nn.Linear(hidden_size, hidden_size, device=device, dtype=dtype)
-        self.fc3 = nn.Linear(hidden_size, output_size, device=device, dtype=dtype)
+        self.fc1 = nn.Linear(input_size, output_size, device=device, dtype=dtype)
         self.relu = nn.ReLU()
     
     def forward(self, x:torch.Tensor)->torch.Tensor:
         x = self.relu(self.fc1(x))
-        x = self.relu(self.fc2(x))
-        x = self.fc3(x)
         return x
     
 class Bert(nn.Module):
@@ -68,7 +78,14 @@ class Bert(nn.Module):
         
     def forward(self, prompt:str):
         
-        inputs = self.tokenizer(prompt, return_tensors="pt").to(self.device)
+        inputs = self.tokenizer(prompt, return_tensors="pt")
+        # 进行输入截断[:512]
+        if inputs["input_ids"].shape[-1] > 512:
+            inputs["input_ids"] = inputs["input_ids"][:, :512]
+            inputs["token_type_ids"] = inputs["token_type_ids"][:, :512]
+            inputs["attention_mask"] = inputs["attention_mask"][:, :512]
+            
+        inputs.to(self.device)
         
         # NOTE: Maybe there are some problems in training. Will fix when appear.
         with torch.no_grad():

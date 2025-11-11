@@ -81,11 +81,17 @@ class online_embedding_profile():
         self.output = output_text
 
         # Embedding API
-        self.api_key  = os.environ.get("Local_Embedding_Key")
-        self.client = OpenAI(
-            api_key=self.api_key,
-            base_url="http://localhost:8000/v1",
-        )
+        if self.model == "Qwen3-Embeddings-0.6B":
+            self.api_key  = os.environ.get("Local_Embedding_Key")
+            self.client = OpenAI(
+                api_key=self.api_key,
+                base_url="http://localhost:8000/v1",
+            )
+        elif self.model == "bert-embedding":
+            self.client = OpenAI(
+                api_key="",
+                base_url="http://localhost:8000/v1",
+            )
         
         self.access_count = 0
         self.data_list = []

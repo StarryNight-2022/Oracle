@@ -14,7 +14,7 @@ from router.models.scripts.dataset.our_datasets import prepare_training_data, tr
 # 训练函数
 def train_model(model, train_loader, val_loader, num_epochs=100, learning_rate=0.001, device="cpu"):
     criterion = nn.CrossEntropyLoss()
-    optimizer = optim.Adam(model.parameters(), lr=learning_rate)
+    optimizer = optim.Adam(model.parameters(), lr=learning_rate, weight_decay=1e-5)
     
     train_losses = []
     val_losses = []
@@ -52,7 +52,7 @@ def train_model(model, train_loader, val_loader, num_epochs=100, learning_rate=0
                 inputs = inputs.to(device)
                 targets = targets.to(device)
                 outputs = model(inputs)
-                loss = criterion(outputs.data, targets)
+                loss = criterion(outputs, targets)
                 val_loss += loss.item()
                 val_total += targets.size(0)
                 preds = outputs.argmax(dim=1)
@@ -78,23 +78,35 @@ def train_model(model, train_loader, val_loader, num_epochs=100, learning_rate=0
     return train_losses, val_losses, train_accs, val_accs
 
 # 主函数
-def main():
+def main(embedding_model:str):
     device = torch.device("cuda:1")
-    embedding_model="Qwen3-Embeddings-0.6B"
+
     config_file = "/home/ouyk/project/ICDCS/Oracle/config/router_model_GSM8K.yaml"
     with open(config_file, "r") as f:
         config = yaml.safe_load(f)
         
-    # n_classes = config["Data"]["labels"]["num_tokens_range_split"]
-    n_classes = config["Data"]["labels"]["latency_range_split"]
+    n_classes = config["Data"]["labels"]["num_tokens_range_split"]
+    # n_classes = config["Data"]["labels"]["latency_range_split"]
     
-    # 超参数设置
-    input_size = 1024
-    hidden_size = 128
-    output_size = n_classes
-    num_epochs = 100
-    batch_size = 32
-    learning_rate = 1e-4
+    # 超参数设置()
+    if embedding_model == "Qwen3-Embeddings-0.6B":
+        dtype=torch.float32
+        input_size = 1024
+        hidden_size = 128
+        output_size = n_classes
+        num_epochs = 1000
+        batch_size = 32
+        learning_rate = 1e-4
+    elif embedding_model == "bert-embedding":
+        dtype=torch.float32
+        input_size = 768
+        hidden_size = 192
+        output_size = n_classes
+        num_epochs = 3000
+        batch_size = 32
+        learning_rate = 1e-5
+    else:
+        raise NotImplementedError(f"Don't support {embedding_model}")
         
     model_A = "Qwen3-0.6B-temp-0-no-thinking"   # use its embedding as inputs
     # model_B = "Qwen3-14B-temp-0-no-thinking"    # use its output_length as lables
@@ -104,16 +116,17 @@ def main():
     data_require = {
         "input_embeddings": True,
         "output_embeddings": False,
-        "output_tokens": False,
-        "latency": True,
-        "output_tokens_label": False,
-        "latency_label": True,
+        "output_tokens": True,
+        "latency": False,
+        "output_tokens_label": True,
+        "latency_label": False,
     }
     
     # 准备数据 lable_strategy: 0->Fixed Intervals, 1->Flexible Intervals
     X, Y, range_dict = prepare_training_data(config, index_list, model_A, model_B, embedding_model, data_require=data_require, lable_strategy=1)
     
-    y = Y["latency"]
+    # y = Y["latency"]
+    y = Y["output_tokens"]
     
     # 分割数据
     # X_train, X_test:{"input_embeddings": np.ndarray, "output_embeddings":np.ndarray, "output_tokens":np.ndarray}
@@ -127,7 +140,7 @@ def main():
     val_loader = DataLoader(val_dataset, batch_size=batch_size, shuffle=False)
     
     # 初始化模型
-    model = MLP(input_size, hidden_size, output_size).to(device)
+    model = MLP(input_size, hidden_size, output_size, device=device, dtype=dtype)
     print(model)
     
     # 训练模型
@@ -162,4 +175,6 @@ def main():
     plt.savefig('training_curves.png')
 
 if __name__ == '__main__':
-    main()
+    embedding_model="Qwen3-Embeddings-0.6B"
+    # embedding_model="bert-embedding"
+    main(embedding_model)

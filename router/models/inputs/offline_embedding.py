@@ -106,7 +106,9 @@ class offline_embedding():
 # Generate prompts' embeddings [直接运行该文件负责生成指定数据集的embedding文件]
 # 首先调用 online_embedding 生成 embedding，并使用numpy的npy/npz格式存储下来，以备调用。
 if __name__ == "__main__":
-    embedding_model="Qwen3-Embeddings-0.6B"
+    # embedding_model="Qwen3-Embeddings-0.6B"
+    embedding_model="bert-embedding"
+    
     config_file = "/home/ouyk/project/ICDCS/Oracle/config/router_model_GSM8K.yaml"
     # config_file = "/home/ouyk/project/ICDCS/Oracle/config/router_model_Chatbot-Arena.yaml"
     with open(config_file, "r") as f:
@@ -118,7 +120,7 @@ if __name__ == "__main__":
     index_list = (np.load(record)).tolist()
     
     # Generate embeddings with vLLM(生成embeddings数据)
-    tool = offline_embedding(config, index_list, model_A, input_text=False, output_text=True, embedding_model=embedding_model, gen=True)
+    tool = offline_embedding(config, index_list, model_A, input_text=True, output_text=False, embedding_model=embedding_model, gen=True)
     tool.gen_data()
     
     # 获取到在GSM8K数据集上每一条query对应的num_tokens
