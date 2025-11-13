@@ -1,0 +1,18 @@
+output_length_prediction:
+  # 使用输出tokens数量固定间隔分割的方式进行分类 
+  num_tokens_range_split: 16
+  range_interval: 50 
+  device : "cuda:1"
+  # embedding_model: "Qwen3-Embeddings-0.6B"
+  embedding_model: "bert-embedding"
+  model_name_embed_dim: 128
+  bert-embedding:
+    classifier_dir: "/home/ouyk/project/ICDCS/Oracle/model/Classifier/MLP_Bert_Embedding.bin"
+    embedding_dim: 768
+    hidden_size: 192
+    dtype: torch.float32
+  Qwen3-Embeddings-0.6B:
+    classifier_dir: "/home/ouyk/project/ICDCS/Oracle/model/Classifier/MLP_Qwen3_Embedding.bin" 
+    embedding_dim: 1024
+    hidden_size: 128
+    dtype: torch.float32

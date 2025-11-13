@@ -2,7 +2,7 @@
 # 使用vLLM在本地部署一个Embedding API，在运行时使用该API获取embedding
 # 需要进行调用开销计时
 from openai import OpenAI
-from typing import Dict, List, Any
+from typing import Dict, List, Any, Optional
 import os
 import json
 import traceback
@@ -11,25 +11,42 @@ import numpy as np
 
 class online_embedding():
     # 需要指定index_list参数来确保移除了指定的outliers
-    def __init__(self, config: Dict, index_list:List[int], model:str, input_text:bool = False, output_text:bool = False, embedding_model:str = "Qwen3-Embeddings-0.6B"):
-        self.benchmark = config["Data"]["benchmark"]
-        self.num_data  = config["Data"]["num_data"]
-        self.data_dir  = os.path.join(config["Data"]["data_dir"], model)
+    def __init__(self, 
+                 embedding_model:str = "Qwen3-Embeddings-0.6B",
+                 config: Optional[Dict] = None,
+                 index_list:Optional[List[int]] = None, 
+                 model:Optional[str] = None, 
+                 input_text:Optional[bool] = False, 
+                 output_text:Optional[bool] = False):
         self.model = embedding_model
-        self.index_list = index_list
-        self.input = input_text
-        self.output = output_text
-
+        self.config = config
         # Embedding API
         self.api_key  = os.environ.get("Local_Embedding_Key")
-        self.client = OpenAI(
-            api_key=self.api_key,
-            base_url="http://localhost:8000/v1",
-        )
+        # Embedding API
+        if self.model == "Qwen3-Embeddings-0.6B":
+            self.api_key  = os.environ.get("Local_Embedding_Key")
+            self.client = OpenAI(
+                api_key=self.api_key,
+                base_url="http://localhost:8000/v1",
+            )
+        elif self.model == "bert-embedding":
+            self.client = OpenAI(
+                api_key="",
+                base_url="http://localhost:8000/v1",
+            )  
+        else:
+            raise NotImplementedError(f"Don't support that embedding model:{self.model}")
         
         self.access_count = 0
         self.data_list = []
-        self.load_datasets()
+        if self.config != None:
+            self.benchmark = config["Data"]["benchmark"]
+            self.num_data  = config["Data"]["num_data"]
+            self.data_dir  = os.path.join(config["Data"]["data_dir"], model)
+            self.index_list = index_list
+            self.input = input_text
+            self.output = output_text
+            self.load_datasets()
     
     def __iter__(self):
         self.access_count += 1
@@ -63,10 +80,13 @@ class online_embedding():
             return None
     
     def embed(self, prompt:str) -> List[float]:
-        responses = self.client.embeddings.create(
-            input=[prompt],
-            model=self.model,
-        )
+        try:
+            responses = self.client.embeddings.create(
+                input=[prompt],
+                model=self.model,
+            )
+        except:
+            raise NotImplementedError("Please make sure you have already started the vLLM server!")
         return responses.data[0].embedding
     
 class online_embedding_profile():
@@ -92,6 +112,8 @@ class online_embedding_profile():
                 api_key="",
                 base_url="http://localhost:8000/v1",
             )
+        else:
+            raise NotImplementedError(f"Don't support that embedding model:{self.model}")
         
         self.access_count = 0
         self.data_list = []
