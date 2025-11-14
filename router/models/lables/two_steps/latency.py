@@ -17,7 +17,8 @@ class label_generator():
         self.latency_range_split = config["Data"]["labels"]["latency_range_split"]
         self.data_list = []
         self.index_list = index_list
-        self.manually_set = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 15, 20, 25, 30, 50, 100]   # 用于strategy_2的手动设置的latency interval 间隔
+        self.interval = 100
+        self.manually_set = [i*self.interval for i in range(self.latency_range_split + 1)]   # 用于strategy_2的手动设置的latency interval 间隔
         self.load_datasets()
         
     def load_datasets(self):

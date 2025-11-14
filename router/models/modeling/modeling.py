@@ -43,13 +43,13 @@ class MLP_1(nn.Module):
     def __init__(self, input_size:int, hidden_size:int, output_size:int, device:torch.device, dtype:torch.dtype):
         super(MLP_1, self).__init__()
         self.fc1 = nn.Linear(input_size, hidden_size, device=device, dtype=dtype)
-        self.fc2 = nn.Linear(hidden_size, hidden_size, device=device, dtype=dtype)
+        # self.fc2 = nn.Linear(hidden_size, hidden_size, device=device, dtype=dtype)
         self.fc3 = nn.Linear(hidden_size, output_size, device=device, dtype=dtype)
         self.relu = nn.ReLU()
     
     def forward(self, x:torch.Tensor)->torch.Tensor:
         x = self.relu(self.fc1(x))
-        x = self.relu(self.fc2(x))
+        # x = self.relu(self.fc2(x))
         x = self.fc3(x)
         return x
     

@@ -19,6 +19,8 @@ class label_generator():
         self.num_tokens_range_split = config["Data"]["labels"]["num_tokens_range_split"]
         self.data_list = []
         self.index_list = index_list
+        self.interval = 50
+        self.manually_set = [i*self.interval for i in range(self.num_tokens_range_split + 1)]   # 用于strategy_2的手动设置的num_tokens间隔
         self.load_datasets()
         
     def load_datasets(self):
@@ -43,6 +45,8 @@ class label_generator():
             range_dict, lables = self.strategy_0()
         elif strategy == 1:
             range_dict, lables = self.strategy_1()
+        elif strategy == 2:
+            range_dict, lables = self.strategy_2() 
         else:
             raise ValueError(f"{os.path.abspath(__file__)}: Output tokens label generator don't supports strategy:{strategy}")
         return range_dict, lables
@@ -90,6 +94,21 @@ class label_generator():
                     lables[j] = i
         return range_dict, lables
     
+    # Manually specified intervals
+    def strategy_2(self) -> Tuple[Dict, np.ndarray]:
+        intervals = self.manually_set
+        # 为len(intervals) - 1个区间生成标签
+        lables = np.zeros(len(self.data_list), dtype=int)
+        range_dict = {}
+        for i in range(len(intervals) - 1):
+            lower_bound = intervals[i]
+            upper_bound = intervals[i + 1]
+            range_dict[i] = (lower_bound, upper_bound)
+            for j, length in enumerate(self.data_list):
+                if lower_bound <= length < upper_bound:
+                    lables[j] = i
+        return range_dict, lables
+    
 if __name__ == "__main__":
     import yaml
     from router.utils.tools import plot_histogram
@@ -103,7 +122,7 @@ if __name__ == "__main__":
     record = os.path.join(config["Data"]["data_dir"], model, "without_outliers.npy")
     index_list = (np.load(record)).tolist()
     
-    strategy = 1
+    strategy = 2
     
     tool = label_generator(config, index_list, model)
     range_dict, lables = tool.gen_lables(strategy)

@@ -8,7 +8,7 @@ import yaml
 import numpy as np
 
 # 自定义内容
-from router.models.modeling.modeling import MLP
+from router.models.modeling.modeling import MLP, MLP_1
 from router.models.scripts.dataset.our_datasets import prepare_training_data, train_test_split
 
 # 训练函数
@@ -94,7 +94,7 @@ def main(embedding_model:str):
         input_size = 1024
         hidden_size = 128
         output_size = n_classes
-        num_epochs = 1000
+        num_epochs = 100
         batch_size = 32
         learning_rate = 1e-4
     elif embedding_model == "bert-embedding":
@@ -123,7 +123,7 @@ def main(embedding_model:str):
     }
     
     # 准备数据 lable_strategy: 0->Fixed Intervals, 1->Flexible Intervals
-    X, Y, range_dict = prepare_training_data(config, index_list, model_A, model_B, embedding_model, data_require=data_require, lable_strategy=1)
+    X, Y, range_dict = prepare_training_data(config, index_list, model_A, model_B, embedding_model, data_require=data_require, lable_strategy=2)
     
     # y = Y["latency"]
     y = Y["output_tokens"]
@@ -140,7 +140,7 @@ def main(embedding_model:str):
     val_loader = DataLoader(val_dataset, batch_size=batch_size, shuffle=False)
     
     # 初始化模型
-    model = MLP(input_size, hidden_size, output_size, device=device, dtype=dtype)
+    model = MLP_1(input_size, hidden_size, output_size, device=device, dtype=dtype)
     print(model)
     
     # 训练模型
