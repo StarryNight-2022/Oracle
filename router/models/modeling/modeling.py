@@ -65,7 +65,7 @@ class MLP_1(nn.Module):
 
 # 增加了每个模型的输入，以支持对各个模型的泛化能力。
 class MLP_2(nn.Module):
-    def __init__(self, num_models:int, input_size:int, hidden_size:int, output_size:int, device:torch.device, dtype:torch.dtype, alpha:float):
+    def __init__(self, num_models:int, input_size:int, hidden_size:int, output_size:int, device:torch.device, dtype:torch.dtype, alpha:Optional[float] = None, test:bool = False):
         super(MLP_2, self).__init__()
         self.device = device
         self.fc1 = nn.Linear(input_size, hidden_size, device=device, dtype=dtype)
@@ -74,15 +74,16 @@ class MLP_2(nn.Module):
         self.fc3 = nn.Linear(hidden_size, output_size, device=device, dtype=dtype)
         self.relu = nn.ReLU()
         self.alpha = alpha
+        self.test = test
     
-    def forward(self, x:torch.Tensor, model_list:List[str], test:bool=False)->torch.Tensor:
-        if test == False:
+    def forward(self, prompt_embedding:torch.Tensor, model_list:List[str])->torch.Tensor:
+        if self.test == False:
             # adding noise to stablize the training
             prompt_embed += torch.randn_like(prompt_embed) * self.alpha
         model_ids = [MODEL_IDS[model_name] for model_name in model_list]
         model_ids = torch.tensor(model_ids, dtype=torch.long).to(self.device) # [num_models]
         
-        prompt_embed = self.relu(self.fc1(x))  # [text_embedding_dim] -> [hidden_size]
+        prompt_embed = self.relu(self.fc1(prompt_embedding))  # [text_embedding_dim] -> [hidden_size]
         model_embed = self.embedding(model_ids) # [num_models, hidden_size]
         model_embed = torch.nn.functional.normalize(model_embed, p=2, dim=1) # [num_models, hidden_size]
         x = self.fc3(model_embed * prompt_embed) # [num_models, hidden_size] -> [num_models, output_size]
