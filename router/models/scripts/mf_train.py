@@ -58,6 +58,8 @@ class MFModel_Train(torch.nn.Module):
             False
         )  # When loading the trained ckpt, delete Q, since during test time the prompt embedding is calculated using the OpenAI API
         embeddings = np.load(npy_path)
+        # NOTE: Added: [(   1, 0.16462445, [-3.27846073e-02,  7.43532740e-03, -7.15866406e-03, ...,  6.12117629e-03, -2.48997007e-02, -5.67159876e-02]] -> [[-3.27846073e-02,  7.43532740e-03, -7.15866406e-03, ...,  6.12117629e-03, -2.48997007e-02, -5.67159876e-02]]
+        embeddings = np.array([embeddings[i][2] for i in range(embeddings.shape[0])])
         self.Q.weight.data.copy_(torch.tensor(embeddings))
 
         if self.use_proj:
@@ -201,8 +203,10 @@ def train_loops(
 # {"idx":0, "model_a":"", "model_b":"", "winner":""}
 if __name__ == "__main__":
     # an example of training the model
-    json_path = "/path/to/pairwise_data.json"
-    npy_path = "/path/to/prompt/embedding.npy"
+    # json_path = "/path/to/pairwise_data.json"
+    # npy_path = "/path/to/prompt/embedding.npy"
+    json_path = "/home/ouyk/project/ICDCS/Oracle/input/A100/Pairwise/MF_trainset.json"
+    npy_path = "/home/ouyk/project/ICDCS/Oracle/input/A100/Embeddings/Qwen3-Embeddings-0.6B/GSM8K_input_embeddings.npy"
 
     dim = 128
     batch_size = 64
@@ -237,6 +241,8 @@ if __name__ == "__main__":
         dim=dim,
         num_models=len(MODEL_IDS),
         num_prompts=len(data),
+        text_dim=1024,
+        num_classes=1,
         use_proj=use_proj,
         npy_path=npy_path,
     ).to("cuda")
@@ -251,3 +257,5 @@ if __name__ == "__main__":
         num_epochs=num_epochs,
         device="cuda",
     )
+
+    torch.save(model.state_dict(), "mf_model.pth")

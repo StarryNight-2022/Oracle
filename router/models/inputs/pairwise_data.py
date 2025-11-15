@@ -19,8 +19,74 @@ import os
 from pathlib import Path
 import json
 from typing import List, Dict, Any
+import glob
 
-
+def write_list_to_jsonl(data_list, file_path):
+    """
+    将List[Dict]写入JSONL文件（每行一个JSON对象）
+    
+    Args:
+        data_list: 包含字典的列表
+        file_path: 输出文件路径
+    """
+    try:
+        with open(file_path, 'w', encoding='utf-8') as f:
+            for item in data_list:
+                # 将每个字典转换为JSON字符串并写入文件
+                json_line = json.dumps(item, ensure_ascii=False)
+                f.write(json_line + '\n')
+        print(f"成功写入 {len(data_list)} 条记录到 {file_path}")
+    except Exception as e:
+        print(f"写入文件时出错: {e}")
+        
+def write_list_to_json(data_list, file_path, indent=2, ensure_ascii=False):
+    """
+    将List[Dict]写入标准的JSON文件（数组格式）
+    
+    Args:
+        data_list: 包含字典的列表
+        file_path: 输出文件路径
+        indent: 缩进，None表示不格式化
+        ensure_ascii: 是否确保ASCII编码，False可以保存中文
+    """
+    try:
+        with open(file_path, 'w', encoding='utf-8') as f:
+            json.dump(data_list, f, indent=indent, ensure_ascii=ensure_ascii)
+        print(f"成功写入 {len(data_list)} 条记录到 {file_path}")
+    except Exception as e:
+        print(f"写入文件时出错: {e}")
 
 if __name__ == "__main__":
-    pass
+    input_dir = "/home/ouyk/project/ICDCS/Oracle/outputs/GSM8K/oracle/strategy_0"
+    input_list:List[str] = glob.glob(os.path.join(input_dir, "*.jsonl"))
+    output_dir = "/home/ouyk/project/ICDCS/Oracle/input/A100/Pairwise"
+    output_file = os.path.join(output_dir, "MF_trainset.json")
+    trainset = []
+    
+    for input in input_list:
+        model_a:str = "" 
+        model_b:str = ""
+        choice:Dict = {}
+        with open(input, 'r') as file:
+            for idx, line in enumerate(file, start=0):
+                line = line.strip()
+                if line:
+                    data = json.loads(line)
+                    if idx == 0:   
+                        model_a = (list(data["raw"].keys()))[0]
+                        model_b = (list(data["raw"].keys()))[1]
+                        choice:Dict = {
+                            (list(data["raw"].keys()))[0]: "model_a",
+                            (list(data["raw"].keys()))[1]: "model_b"
+                        }
+                    trainset.append({
+                        "idx": idx,
+                        "model_a": model_a,
+                        "model_b": model_b,
+                        "winner": choice[data["model"]]
+                    })
+    
+    write_list_to_json(trainset, output_file)
+       
+        
+        
