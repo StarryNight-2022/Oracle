@@ -15,7 +15,6 @@ torch.manual_seed(42)
 np.random.seed(42)
 random.seed(42)
 
-
 class PairwiseDataset(Dataset):
     def __init__(self, data):
         self.models_a = torch.tensor(
@@ -40,7 +39,7 @@ class PairwiseDataset(Dataset):
     def get_dataloaders(self, batch_size, shuffle=True):
         return DataLoader(self, batch_size, shuffle=shuffle)
 
-
+# TODO: 考虑是否需要修改调整这里的训练策略
 class MFModel_Train(torch.nn.Module):
     def __init__(
         self,
@@ -198,7 +197,8 @@ def train_loops(
 
     progress_bar.close()
 
-
+# the format of pairwise_data.json:
+# {"idx":0, "model_a":"", "model_b":"", "winner":""}
 if __name__ == "__main__":
     # an example of training the model
     json_path = "/path/to/pairwise_data.json"
