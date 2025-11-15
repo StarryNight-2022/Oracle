@@ -3,16 +3,18 @@ output_length_prediction:
   num_tokens_range_split: 16
   range_interval: 50 
   device : "cuda:1"
-  # embedding_model: "Qwen3-Embeddings-0.6B"
-  embedding_model: "bert-embedding"
+  embedding_model: "Qwen3-Embeddings-0.6B" #"bert-embedding"
+  prediction_model: "mlp" # "knn"/"mlp"
   model_name_embed_dim: 128
   bert-embedding:
-    classifier_dir: "/home/ouyk/project/ICDCS/Oracle/model/Classifier/MLP_Bert_Embedding.bin"
-    embedding_dim: 768
+    mlp_dir: "/home/ouyk/project/ICDCS/Oracle/model/MLP/MLP_Bert_Embedding.bin"
+    knn_dir: ""
+    text_embedding_dim: 768
     hidden_size: 192
     dtype: torch.float32
   Qwen3-Embeddings-0.6B:
-    classifier_dir: "/home/ouyk/project/ICDCS/Oracle/model/Classifier/MLP_Qwen3_Embedding.bin" 
-    embedding_dim: 1024
+    mlp_dir: "/home/ouyk/project/ICDCS/Oracle/model/MLP/MLP_Qwen_Embedding.pth" 
+    knn_dir: "/home/ouyk/project/ICDCS/Oracle/model/KNN/knn_model.joblib"
+    text_embedding_dim: 1024
     hidden_size: 128
     dtype: torch.float32

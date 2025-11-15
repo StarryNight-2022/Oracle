@@ -4,6 +4,7 @@ vllm serve /home/ouyk/project/Runtime/Model/Qwen3-Embedding-0.6B             \
             --trust-remote-code                                              \
             --served-model-name Qwen3-Embeddings-0.6B                        \
             --max-model-len   32768                                          \
+            --gpu-memory-utilization 0.7
             # --task embed
 
 # vllm serve /home/ouyk/project/Runtime/Model/Qwen3-Embedding-0.6B             \

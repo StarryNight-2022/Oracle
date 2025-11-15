@@ -59,3 +59,11 @@ if __name__ == "__main__":
     # 保存模型
     model_path = 'knn_model.joblib'
     joblib.dump(knn, model_path)
+    
+    #
+    knn_1 = joblib.load(model_path)
+    knn_1.fit(X_train["input_embeddings"], y_train)
+    
+    # evaluate KNN
+    accuracy = knn_1.score(X_test["input_embeddings"], y_test)
+    print(f"模型准确率: {accuracy:.4f}")

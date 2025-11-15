@@ -6,6 +6,17 @@ MODEL_IDS:Dict[str, int] = {
     "Qwen3-14B-no-thinking": 1,
 }
 
+LLM_TIME_PARAMS:Dict[str, Dict[str, float]] = {
+    "Qwen3-0.6B-no-thinking": {
+        "TTFT": 1,
+        "TPOT": 0.2
+        },
+    "Qwen3-14B-no-thinking": {
+        "TTFT": 2,
+        "TPOT": 0.4
+        },
+}
+
 # 参考RouterLLM的MF方法
 # MODEL_IDS = {
 #     "RWKV-4-Raven-14B": 0,

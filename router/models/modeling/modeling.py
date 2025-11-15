@@ -8,6 +8,7 @@ import pickle
 #---------------------- MLP -----------------------
 import torch
 import torch.nn as nn
+from safetensors.torch import load_file
 #------------------ Transformers ------------------
 from transformers import BertModel, AutoTokenizer
 #--------------------------------------------------
@@ -51,6 +52,27 @@ class MLP_1(nn.Module):
         x = self.relu(self.fc1(x))
         # x = self.relu(self.fc2(x))
         x = self.fc3(x)
+        return x
+
+# 增加了每个模型的输入，以支持对各个模型的泛化能力。
+class MLP_2(nn.Module):
+    def __init__(self, num_models:int, input_size:int, hidden_size:int, output_size:int, device:torch.device, dtype:torch.dtype):
+        super(MLP_2, self).__init__()
+        self.device = device
+        self.fc1 = nn.Linear(input_size, hidden_size, device=device, dtype=dtype)
+        self.embedding = nn.Embedding(num_models, hidden_size, device=device)
+        # self.fc2 = nn.Linear(hidden_size, hidden_size, device=device, dtype=dtype)
+        self.fc3 = nn.Linear(hidden_size, output_size, device=device, dtype=dtype)
+        self.relu = nn.ReLU()
+    
+    def forward(self, x:torch.Tensor, model_list:List[str])->torch.Tensor:
+        model_ids = [MODEL_IDS[model_name] for model_name in model_list]
+        model_ids = torch.tensor(model_ids, dtype=torch.long).to(self.device) # [num_models]
+        
+        prompt_embed = self.relu(self.fc1(x))  # [text_embedding_dim] -> [hidden_size]
+        model_embed = self.embedding(model_ids) # [num_models, hidden_size]
+        model_embed = torch.nn.functional.normalize(model_embed, p=2, dim=1) # [num_models, hidden_size]
+        x = self.fc3(model_embed * prompt_embed) # [num_models, hidden_size] -> [num_models, output_size]
         return x
     
 class Bert(nn.Module):
@@ -115,11 +137,11 @@ class MFModel(torch.nn.Module):
         super().__init__()
         self._name = "TextMF"
         self.use_proj = use_proj
-        self.P = torch.nn.Embedding(num_models, dim)
+        self.P = torch.nn.Embedding(num_models, dim, device=device)
 
         if self.use_proj:
             self.text_proj = torch.nn.Sequential(
-                torch.nn.Linear(text_dim, dim, bias=False)
+                torch.nn.Linear(text_dim, dim, bias=False, device=device)
             )
         else:
             assert (
@@ -127,7 +149,7 @@ class MFModel(torch.nn.Module):
             ), f"text_dim {text_dim} must be equal to dim {dim} if not using projection"
 
         self.classifier = torch.nn.Sequential(
-            torch.nn.Linear(dim, num_classes, bias=False)
+            torch.nn.Linear(dim, num_classes, bias=False, device=device)
         )
 
     def get_device(self):
@@ -148,7 +170,8 @@ class MFModel(torch.nn.Module):
         model_ids = [MODEL_IDS[model_name] for model_name in model_list]
         logits = self.forward(model_ids, prompt_embed) # [len(model_list), 1]
         choice = torch.argmax(logits, dim=0)
-        return model_list[choice.cpu().numpy()[0]]
+        return model_list[choice.cpu().numpy()]
 
     def load(self, path):
-        self.load_state_dict(torch.load(path))
+        # self.load_state_dict(torch.load(path))
+        self.load_state_dict(load_file(path))
