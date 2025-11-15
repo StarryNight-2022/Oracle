@@ -13,3 +13,14 @@
 # 这是基于回答质量给出的比较
 # {"idx":0, "model_a":"", "model_b":"", "winner":""}
 
+# 读取路径"/home/ouyk/project/ICDCS/Oracle/outputs/GSM8K/oracle/strategy_0"下的*.jsonl文件，得到一系列的model_a, model_b的数据。
+
+import os
+from pathlib import Path
+import json
+from typing import List, Dict, Any
+
+
+
+if __name__ == "__main__":
+    pass

@@ -29,7 +29,7 @@ from router.utils.tools import ensure_dir, print_sign, read_jsonl
 def parse_args():
     parser = argparse.ArgumentParser(description="Process some parameters.")
     
-    parser.add_argument('--config', type=str, default="./config/plot/oracle/Qwen3-0.6B-en-think_AND_Deepseek-v3.2-Exp-reasoner.yaml",
+    parser.add_argument('--config', type=str, default="./../config/plot/oracle/Qwen3-0.6B-no-think_AND_Qwen3-14B-no-think.yaml",
                         help="Specify the config file")
     
     parser.add_argument('--latency_constraint', type=float, default=-1,
@@ -45,8 +45,8 @@ def parse_args():
     return args
 
 if __name__ == "__main__":
-    runtime_dir = os.path.dirname(os.Path.join(os.path.abspath(__file__), ".."))
-    
+    runtime_dir = os.path.join(os.path.dirname(os.path.abspath(__file__)), "..")
+
     args = parse_args()
     
     #--------------------------------- Load the YAML file -------------------------------
@@ -79,12 +79,15 @@ if __name__ == "__main__":
         else:
             outputs_dir = args.outputs_dir
         ensure_dir(outputs_dir)
-        if latency_constraint == None:
-            output_file = (((str(args.config)).split("/")[-1]).split(".yaml")[0]) + "_no-latency-constraint" + ".jsonl"
-        elif type(latency_constraint) == float:
-            output_file = (((str(args.config)).split("/")[-1]).split(".yaml")[0]) + f"_{latency_constraint}s-latency-constraint" + ".jsonl"
-        else:
-            raise ValueError("latency_constraint must be None or float.")
+        if int(args.choice) == 0:
+            output_file = (((str(args.config)).split("/")[-1]).split(".yaml")[0]) + ".jsonl"
+        elif int(args.choice) == 1 or int(args.choice) == 2:
+            if latency_constraint == None:
+                output_file = (((str(args.config)).split("/")[-1]).split(".yaml")[0]) + "_no-latency-constraint" + ".jsonl"
+            elif type(latency_constraint) == float:
+                output_file = (((str(args.config)).split("/")[-1]).split(".yaml")[0]) + f"_{latency_constraint}s-latency-constraint" + ".jsonl"
+            else:
+                raise ValueError("latency_constraint must be None or float.")
         
         times = {model:0 for model in Models}
         accuracy = 0

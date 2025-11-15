@@ -6,14 +6,15 @@ MODEL_IDS:Dict[str, int] = {
     "Qwen3-14B-no-thinking": 1,
 }
 
+# latency = a * num_tokens + b
 LLM_TIME_PARAMS:Dict[str, Dict[str, float]] = {
     "Qwen3-0.6B-no-thinking": {
-        "TTFT": 1,
-        "TPOT": 0.2
+        "b": -0.18,
+        "a": 0.005
         },
     "Qwen3-14B-no-thinking": {
-        "TTFT": 2,
-        "TPOT": 0.4
+        "b": -0.57,
+        "a": 0.026
         },
 }
 

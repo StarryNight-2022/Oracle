@@ -31,32 +31,41 @@ class KNN():
         return self.model.predict(X_scaled)
 
 class MLP(nn.Module):
-    def __init__(self, input_size:int, hidden_size:int, output_size:int, device:torch.device, dtype:torch.dtype):
+    def __init__(self, input_size:int, hidden_size:int, output_size:int, device:torch.device, dtype:torch.dtype, alpha:float):
         super(MLP, self).__init__()
         self.fc1 = nn.Linear(input_size, output_size, device=device, dtype=dtype)
         self.relu = nn.ReLU()
+        self.alpha = alpha
     
-    def forward(self, x:torch.Tensor)->torch.Tensor:
-        x = self.relu(self.fc1(x))
+    def forward(self, prompt_embed:torch.Tensor, test:bool=False)->torch.Tensor:
+        if test == False:
+            # adding noise to stablize the training
+            prompt_embed += torch.randn_like(prompt_embed) * self.alpha
+        x = self.relu(self.fc1(prompt_embed))
         return x
     
 class MLP_1(nn.Module):
-    def __init__(self, input_size:int, hidden_size:int, output_size:int, device:torch.device, dtype:torch.dtype):
+    def __init__(self, input_size:int, hidden_size:int, output_size:int, device:torch.device, dtype:torch.dtype, alpha:float):
         super(MLP_1, self).__init__()
         self.fc1 = nn.Linear(input_size, hidden_size, device=device, dtype=dtype)
         # self.fc2 = nn.Linear(hidden_size, hidden_size, device=device, dtype=dtype)
         self.fc3 = nn.Linear(hidden_size, output_size, device=device, dtype=dtype)
         self.relu = nn.ReLU()
+        self.alpha = alpha
     
-    def forward(self, x:torch.Tensor)->torch.Tensor:
-        x = self.relu(self.fc1(x))
+    def forward(self, prompt_embed:torch.Tensor, test:bool=False)->torch.Tensor:
+        if test == False:
+            # adding noise to stablize the training
+            prompt_embed += torch.randn_like(prompt_embed) * self.alpha
+            
+        x = self.relu(self.fc1(prompt_embed))
         # x = self.relu(self.fc2(x))
         x = self.fc3(x)
         return x
 
 # 增加了每个模型的输入，以支持对各个模型的泛化能力。
 class MLP_2(nn.Module):
-    def __init__(self, num_models:int, input_size:int, hidden_size:int, output_size:int, device:torch.device, dtype:torch.dtype):
+    def __init__(self, num_models:int, input_size:int, hidden_size:int, output_size:int, device:torch.device, dtype:torch.dtype, alpha:float):
         super(MLP_2, self).__init__()
         self.device = device
         self.fc1 = nn.Linear(input_size, hidden_size, device=device, dtype=dtype)
@@ -64,8 +73,12 @@ class MLP_2(nn.Module):
         # self.fc2 = nn.Linear(hidden_size, hidden_size, device=device, dtype=dtype)
         self.fc3 = nn.Linear(hidden_size, output_size, device=device, dtype=dtype)
         self.relu = nn.ReLU()
+        self.alpha = alpha
     
-    def forward(self, x:torch.Tensor, model_list:List[str])->torch.Tensor:
+    def forward(self, x:torch.Tensor, model_list:List[str], test:bool=False)->torch.Tensor:
+        if test == False:
+            # adding noise to stablize the training
+            prompt_embed += torch.randn_like(prompt_embed) * self.alpha
         model_ids = [MODEL_IDS[model_name] for model_name in model_list]
         model_ids = torch.tensor(model_ids, dtype=torch.long).to(self.device) # [num_models]
         

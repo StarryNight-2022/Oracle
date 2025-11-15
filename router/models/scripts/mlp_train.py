@@ -12,9 +12,9 @@ from router.models.modeling.modeling import MLP, MLP_1
 from router.models.scripts.dataset.our_datasets import prepare_training_data, train_test_split
 
 # 训练函数
-def train_model(model, train_loader, val_loader, num_epochs=100, learning_rate=0.001, device="cpu"):
+def train_model(model, train_loader, val_loader, num_epochs=100, learning_rate=0.001, weight_decay=1e-5, device="cpu"):
     criterion = nn.CrossEntropyLoss()
-    optimizer = optim.Adam(model.parameters(), lr=learning_rate, weight_decay=1e-5)
+    optimizer = optim.Adam(model.parameters(), lr=learning_rate, weight_decay=weight_decay)
     
     train_losses = []
     val_losses = []
@@ -94,9 +94,11 @@ def main(embedding_model:str):
         input_size = 1024
         hidden_size = 128
         output_size = n_classes
-        num_epochs = 100
+        num_epochs = 1000
         batch_size = 32
         learning_rate = 1e-4
+        alpha = 0.05
+        weight_decay = 1e-5
     elif embedding_model == "bert-embedding":
         dtype=torch.float32
         input_size = 768
@@ -105,6 +107,8 @@ def main(embedding_model:str):
         num_epochs = 3000
         batch_size = 32
         learning_rate = 1e-5
+        alpha = 0.1
+        weight_decay = 1e-5
     else:
         raise NotImplementedError(f"Don't support {embedding_model}")
         
@@ -140,12 +144,12 @@ def main(embedding_model:str):
     val_loader = DataLoader(val_dataset, batch_size=batch_size, shuffle=False)
     
     # 初始化模型
-    model = MLP_1(input_size, hidden_size, output_size, device=device, dtype=dtype)
+    model = MLP(input_size, hidden_size, output_size, device=device, dtype=dtype, alpha=alpha)
     print(model)
     
     # 训练模型
     train_losses, val_losses, train_accs, val_accs = train_model(
-        model, train_loader, val_loader, num_epochs, learning_rate, device
+        model, train_loader, val_loader, num_epochs, learning_rate, weight_decay, device
     )
     
     # 保存模型
