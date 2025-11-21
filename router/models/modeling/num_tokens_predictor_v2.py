@@ -10,7 +10,9 @@ import os
 import joblib
 from sklearn.neighbors import KNeighborsClassifier
 from router.models.router.config import MODEL_IDS
-    
+
+# NOTE: 区别于v1版本，v2版本的预测模型输入变量发生了变化，这里需要指定每个候选模型的名称 model_list:List[str]
+#       目前该版本仅支持使用MLP模型，在训练该MLP模型时可能需要对训练代码进行调整。
 class num_tokens_predictor():
     def __init__(self, config:Dict):
         self.config:Dict = config

@@ -7,7 +7,7 @@
 #   - latency_constraint: float
 from typing import List, Tuple, Dict
 import torch
-from router.models.modeling.num_tokens_predictor_v1 import num_tokens_predictor
+from router.models.modeling.num_tokens_predictor_v2 import num_tokens_predictor
 from router.models.modeling.modeling import MFModel
 from router.models.router.config import MODEL_IDS, LLM_TIME_PARAMS
 
@@ -37,15 +37,15 @@ class Router():
         '''
         models_within:List[str] = []
         
-        output_length_prediction, embedding = self.tokens_predictor.run(prompt)
-        for model in model_name_list:
+        output_length_prediction, embedding = self.tokens_predictor.run(prompt, model_name_list)
+        for idx, model in enumerate(model_name_list, start=0):
             # TODO: 需要为每个候选模型在每个设备上测试得到TTFT与TPOT参数
             # TODO: 后续考虑添加一个根据每次实际运行参数动态更新的机制，计数+平均即可。
             # # latency = a * num_tokens + b
             b = LLM_TIME_PARAMS[model]["b"]
             a = LLM_TIME_PARAMS[model]["a"]
             # 取上限与下限的平均值
-            latency_prediction = ((b + a * output_length_prediction[0]) + (b + a *output_length_prediction[1]))/2
+            latency_prediction = ((b + a * output_length_prediction[idx][0]) + (b + a *output_length_prediction[idx][1]))/2
             # 预测该模型会发生超时 Timeout
             if latency_prediction > latency_constraint:
                 pass
