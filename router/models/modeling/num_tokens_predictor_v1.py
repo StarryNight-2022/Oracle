@@ -66,7 +66,7 @@ class num_tokens_predictor():
         if self.predictor_choice == "mlp":
             embedding_torch = torch.tensor(embedding, device=self.device, dtype=self.dtype)
             with torch.no_grad():
-                out = self.predictor(embedding_torch)
+                out = self.predictor(embedding_torch, test=True)
             result = np.argmax(out.cpu().numpy(), axis=-1)
             return self.range_dict[str(result)], embedding_torch
         # TODO； Test this implementation
