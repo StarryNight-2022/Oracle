@@ -7,12 +7,16 @@ from router.models.inputs.online_embedding import online_embedding
 import numpy as np
 from typing import Dict, Optional, List, Tuple
 import os
+import joblib
+from sklearn.neighbors import KNeighborsClassifier
     
 class num_tokens_predictor():
     def __init__(self, config:Dict):
         self.config:Dict = config
         self.model = config["output_length_prediction"]["embedding_model"]
-        self.classifier_dir:str = config["output_length_prediction"][self.model]["classifier_dir"]
+        self.predictor_choice = config["output_length_prediction"]["prediction_model"]
+        self.mlp_dir:str = config["output_length_prediction"][self.model]["mlp_dir"]
+        self.knn_dir:str = config["output_length_prediction"][self.model]["knn_dir"]
         self.embedding_dim:int = config["output_length_prediction"][self.model]["text_embedding_dim"]
         self.hidden_size:int = config["output_length_prediction"][self.model]["hidden_size"]
         self.num_ranges: int = config["output_length_prediction"]["num_tokens_range_split"]
@@ -27,20 +31,29 @@ class num_tokens_predictor():
         
         self.embedding_model = online_embedding(embedding_model=self.model)
         
-        if os.path.exists(self.classifier_dir):
-            # NOTE: 由于vLLM占用存储，使用同一个显卡设备也许会出现报错，必要的话对vLLM进行配置以预留部分显存空间。
-            self.classifier = MLP_1(
-                input_size=self.embedding_dim,
-                hidden_size=self.hidden_size,
-                output_size=self.num_ranges,
-                device=self.device,
-                dtype=self.dtype
-                )
-            
-            self.classifier.load_state_dict(torch.load(self.classifier_dir))
-            self.classifier.eval()
+        if self.predictor_choice == "mlp":
+            if os.path.exists(self.mlp_dir):
+                # NOTE: 由于vLLM占用存储，使用同一个显卡设备也许会出现报错，必要的话对vLLM进行配置以预留部分显存空间。
+                self.predictor = MLP_1(
+                    input_size=self.embedding_dim,
+                    hidden_size=self.hidden_size,
+                    output_size=self.num_ranges,
+                    device=self.device,
+                    dtype=self.dtype
+                    )
+                
+                self.predictor.load_state_dict(torch.load(self.mlp_dir))
+                self.predictor.eval()
+            else:
+                raise FileNotFoundError("You have to train a MLP classifier first!")
+        elif self.predictor_choice == "knn":
+            if os.path.exists(self.knn_dir):
+                # NOTE: 由于vLLM占用存储，使用同一个显卡设备也许会出现报错，必要的话对vLLM进行配置以预留部分显存空间。
+                self.predictor:KNeighborsClassifier = joblib.load(self.knn_dir)
+            else:
+                raise FileNotFoundError("You have to train a KNN classifier first!")
         else:
-            raise FileNotFoundError("You have to train a MLP classifier first!")
+            raise NotImplementedError(f"Don't support that predictor choice: {self.predictor_choice}")
         
         self.range_dict:Dict[str, Tuple[int, int]] = {}
         range_list = [i*self.range_interval for i in range(self.num_ranges + 1)]
@@ -48,11 +61,23 @@ class num_tokens_predictor():
             self.range_dict[f"{i}"] = (range_list[i], range_list[i+1])
     
     def run(self, prompt:str)->Tuple[Tuple[int, int], torch.Tensor]:
-        embedding = torch.Tensor(self.embedding_model.embed(prompt), device=self.device, dtype=self.dtype)
-        with torch.no_grad():
-            out = self.classifier(embedding)
-        result = np.argmax(out.cpu().numpy(), axis=-1)
-        return self.range_dict[result[0]], embedding
+        embedding = self.embedding_model.embed(prompt)
+        
+        if self.predictor_choice == "mlp":
+            embedding_torch = torch.tensor(embedding, device=self.device, dtype=self.dtype)
+            with torch.no_grad():
+                out = self.predictor(embedding_torch, test=True)
+            result = np.argmax(out.cpu().numpy(), axis=-1)
+            return self.range_dict[str(result)], embedding_torch
+        # TODO； Test this implementation
+        elif self.predictor_choice == "knn":
+            embedding_numpy = np.array(embedding).reshape(1, -1)
+            result = self.predictor.predict(embedding_numpy)
+            return self.range_dict[str(result[0])], torch.tensor(embedding, device=self.device, dtype=self.dtype)
+        else:
+            raise NotImplementedError(f"Don't support prefiction model {self.predictor_choice}")
+        
+        
 
 if __name__ == "__main__":
     import yaml

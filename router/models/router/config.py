@@ -2,8 +2,20 @@
 from typing import Dict
 
 MODEL_IDS:Dict[str, int] = {
-    "Qwen3-0.6B-no-thinking": 0,
-    "Qwen3-14B-no-thinking": 1,
+    "Qwen3-0.6B-temp-0-no-thinking": 0,
+    "Qwen3-14B-temp-0-no-thinking": 1,
+}
+
+# latency = a * num_tokens + b
+LLM_TIME_PARAMS:Dict[str, Dict[str, float]] = {
+    "Qwen3-0.6B-temp-0-no-thinking": {
+        "b": -0.18,
+        "a": 0.005
+        },
+    "Qwen3-14B-temp-0-no-thinking": {
+        "b": -0.57,
+        "a": 0.026
+        },
 }
 
 # 参考RouterLLM的MF方法
