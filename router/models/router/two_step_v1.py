@@ -26,16 +26,17 @@ class Router():
                                     text_dim=text_embedding_dim,
                                     use_proj= not (text_embedding_dim == model_name_embed_dim),
                                     device=self.device)
-        # self.choice_maker.load(path="/home/ouyk/project/ICDCS/Oracle/model/MF/model.safetensors")
+        self.choice_maker.load(path="/home/ouyk/project/ICDCS/Oracle/model/MF/mf_model.pth")
         
     # 基于输出长度，每个模型的等待时延是可计算的，无需使用网络进行学习。
-    def step1(self, prompt:str, model_name_list:List[str], latency_constraint:float)->Tuple[torch.Tensor, List[str]]:
+    def step1(self, prompt:str, model_name_list:List[str], latency_constraint:float)->Tuple[torch.Tensor, List[str], bool]:
         '''
         @return: 
             embeddings: torch.Tensor
             models within latency_constraint: List[str]
         '''
         models_within:List[str] = []
+        latency_dict:Dict[str, float] = {}
         
         output_length_prediction, embedding = self.tokens_predictor.run(prompt)
         for model in model_name_list:
@@ -46,15 +47,23 @@ class Router():
             a = LLM_TIME_PARAMS[model]["a"]
             # 取上限与下限的平均值
             latency_prediction = ((b + a * output_length_prediction[0]) + (b + a *output_length_prediction[1]))/2
+            latency_dict[model] = latency_prediction
             # 预测该模型会发生超时 Timeout
             if latency_prediction > latency_constraint:
                 pass
-            elif latency_constraint <= latency_constraint:
+            elif latency_prediction <= latency_constraint:
                 models_within.append(model)
             else:
                 pass
-            
-        return models_within, embedding
+        
+        # 所有模型均超时，返回最快的模型
+        if models_within == []:
+            # 找到最快的模型
+            fastest_model = min(latency_dict, key=latency_dict.get)
+            return [fastest_model], embedding, True
+        # 未超时，返回所有在约束内的模型
+        else:
+            return models_within, embedding, False
     
     # 这部分可以借鉴RouteLLM
     def step2(self, embedding:torch.Tensor, models_within:List[str])->str:
@@ -64,12 +73,15 @@ class Router():
         return llm_chosen
     
     def route(self, prompt:str, model_name_list:List[str], latency_constraint:float)->str:
-        models_within, embedding = self.step1(prompt=prompt,
+        models_within, embedding, timeout = self.step1(prompt=prompt,
                                               model_name_list=model_name_list,
                                               latency_constraint=latency_constraint)
-        choice = self.step2(embedding=embedding,
+        if timeout == True:
+            return models_within[0]
+        else:
+            choice = self.step2(embedding=embedding,
                             models_within=models_within)
-        return choice
+            return choice
     
 if __name__ == "__main__":
     import yaml

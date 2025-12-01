@@ -257,5 +257,11 @@ if __name__ == "__main__":
         num_epochs=num_epochs,
         device="cuda",
     )
+    
+    state_dict = {
+        'P.weight': model.P.weight,
+        'text_proj.0.weight': model.text_proj.weight,
+        'classifier.0.weight': model.classifier.weight,
+    }
 
-    torch.save(model.state_dict(), "mf_model.pth")
+    torch.save(state_dict, "mf_model.pth")

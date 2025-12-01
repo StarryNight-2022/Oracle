@@ -40,10 +40,6 @@ LLMs:
     name: "Qwen3-14B-temp-0-no-thinking"
     profile_result:
       GSM8K: "/home/ouyk/project/ICDCS/Oracle/input/A100/Raw/GSM8K/Qwen3-14B-temp-0-no-thinking"
-  model_10:
-    name: "o4-mini-temp-1"
-    profile_result:
-      GSM8K: "/home/ouyk/project/ICDCS/Oracle/input/A100/Raw/GSM8K/o4-mini-temp-1"
 Benchmarks:
   GSM8K: "/home/ouyk/project/ICDCS/Oracle/profile/GSM8K/data/train.jsonl"
 #-----------------------------------------------------------------------------

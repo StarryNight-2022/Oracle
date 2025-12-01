@@ -12,7 +12,6 @@ MODEL_IDS:Dict[str, int] = {
     "Qwen3-0.6B-temp-0-no-thinking": 7,
     "Qwen3-14B-temp-0-en-thinking": 8,
     "Qwen3-14B-temp-0-no-thinking": 9,
-    "o4-mini-temp-1": 10
 }
 
 # latency = a * num_tokens + b

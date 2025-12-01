@@ -183,9 +183,17 @@ class MFModel(torch.nn.Module):
     def choose(self, model_list:List[str], prompt_embed:torch.Tensor)->str:
         model_ids = [MODEL_IDS[model_name] for model_name in model_list]
         logits = self.forward(model_ids, prompt_embed) # [len(model_list), 1]
-        choice = torch.argmax(logits, dim=0)
+        try:
+            choice = torch.argmax(logits, dim=0)
+        except ValueError:
+            raise ValueError(f"logits: {logits}")
         return model_list[choice.cpu().numpy()]
-
+    
     def load(self, path):
-        # self.load_state_dict(torch.load(path))
-        self.load_state_dict(load_file(path))
+        try:
+            # 尝试 safetensors 格式
+            state_dict = load_file(path)
+        except:
+            # 如果失败，尝试 PyTorch 格式
+            state_dict = torch.load(path, map_location='cpu')
+        self.load_state_dict(state_dict)
