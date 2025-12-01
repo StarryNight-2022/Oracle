@@ -2,8 +2,17 @@
 from typing import Dict
 
 MODEL_IDS:Dict[str, int] = {
-    "Qwen3-0.6B-temp-0-no-thinking": 0,
-    "Qwen3-14B-temp-0-no-thinking": 1,
+    "Deepseek-v3.2-Exp-temp-0-chat": 0,
+    "Deepseek-v3.2-Exp-temp-0-reasoner": 1,
+    "GPT-4o-mini-temp-0": 2,
+    "Qwen2.5-0.5B-temp-0": 3,
+    "Qwen3-0.6B-FP8-temp-0-no-thinking": 4,
+    "Qwen3-0.6B-INT8-temp-0-no-thinking": 5,
+    "Qwen3-0.6B-temp-0-en-thinking": 6,
+    "Qwen3-0.6B-temp-0-no-thinking": 7,
+    "Qwen3-14B-temp-0-en-thinking": 8,
+    "Qwen3-14B-temp-0-no-thinking": 9,
+    "o4-mini-temp-1": 10
 }
 
 # latency = a * num_tokens + b

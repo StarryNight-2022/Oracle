@@ -58,7 +58,7 @@ class Router():
     
     # 这部分可以借鉴RouteLLM
     def step2(self, embedding:torch.Tensor, models_within:List[str])->str:
-        print("models_within", models_within)
+        # print("models_within", models_within)
         llm_chosen:str = self.choice_maker.choose(model_list=models_within,
                                                   prompt_embed=embedding)
         return llm_chosen

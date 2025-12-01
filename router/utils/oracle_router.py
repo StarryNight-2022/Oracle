@@ -19,8 +19,13 @@ from copy import deepcopy
 from router.utils.config import model_size
 
 class Oracle:
-    def __init__(self, config: Any):
-        self.models:List[str] = [model_info['name'] for model_info in config['Models'].values()]
+    def __init__(self, config: Optional[Any] = None, model_list: Optional[List[str]] = None):
+        if config != None:
+            self.models:List[str] = [model_info['name'] for model_info in config['Models'].values()]
+        elif model_list != None:
+            self.models:List[str] = model_list
+        else:
+            raise ValueError("Param conifg and model_list can't both be None!")
         # model size unit is "B" means Billian of params.
         self.model_size = model_size
     

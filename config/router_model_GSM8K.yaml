@@ -1,3 +1,53 @@
+# For Oracle Router
+LLMs:
+  model_0:
+    name: "Deepseek-v3.2-Exp-temp-0-chat"
+    profile_result: 
+      GSM8K: "/home/ouyk/project/ICDCS/Oracle/input/A100/Raw/GSM8K/Deepseek-v3.2-Exp-temp-0-chat"
+  model_1:
+    name: "Deepseek-v3.2-Exp-temp-0-reasoner"
+    profile_result:
+      GSM8K: "/home/ouyk/project/ICDCS/Oracle/input/A100/Raw/GSM8K/Deepseek-v3.2-Exp-temp-0-reasoner"
+  model_2:
+    name: "GPT-4o-mini-temp-0"
+    profile_result:
+      GSM8K: "/home/ouyk/project/ICDCS/Oracle/input/A100/Raw/GSM8K/GPT-4o-mini-temp-0"
+  model_3:
+      name: "Qwen2.5-0.5B-temp-0"
+      profile_result: 
+        GSM8K: "/home/ouyk/project/ICDCS/Oracle/input/A100/Raw/GSM8K/Qwen2.5-0.5B-temp-0"
+  model_4:
+    name: "Qwen3-0.6B-FP8-temp-0-no-thinking"
+    profile_result:
+      GSM8K: "/home/ouyk/project/ICDCS/Oracle/input/A100/Raw/GSM8K/Qwen3-0.6B-FP8-temp-0-no-thinking"
+  model_5:
+    name: "Qwen3-0.6B-INT8-temp-0-no-thinking"
+    profile_result:
+      GSM8K: "/home/ouyk/project/ICDCS/Oracle/input/A100/Raw/GSM8K/Qwen3-0.6B-INT8-temp-0-no-thinking"
+  model_6:
+    name: "Qwen3-0.6B-temp-0-en-thinking"
+    profile_result: 
+      GSM8K: "/home/ouyk/project/ICDCS/Oracle/input/A100/Raw/GSM8K/Qwen3-0.6B-temp-0-en-thinking"
+  model_7:
+    name: "Qwen3-0.6B-temp-0-no-thinking"
+    profile_result:
+      GSM8K: "/home/ouyk/project/ICDCS/Oracle/input/A100/Raw/GSM8K/Qwen3-0.6B-temp-0-no-thinking"
+  model_8:
+    name: "Qwen3-14B-temp-0-en-thinking"
+    profile_result:
+      GSM8K: "/home/ouyk/project/ICDCS/Oracle/input/A100/Raw/GSM8K/Qwen3-14B-temp-0-en-thinking"
+  model_9:
+    name: "Qwen3-14B-temp-0-no-thinking"
+    profile_result:
+      GSM8K: "/home/ouyk/project/ICDCS/Oracle/input/A100/Raw/GSM8K/Qwen3-14B-temp-0-no-thinking"
+  model_10:
+    name: "o4-mini-temp-1"
+    profile_result:
+      GSM8K: "/home/ouyk/project/ICDCS/Oracle/input/A100/Raw/GSM8K/o4-mini-temp-1"
+Benchmarks:
+  GSM8K: "/home/ouyk/project/ICDCS/Oracle/profile/GSM8K/data/train.jsonl"
+#-----------------------------------------------------------------------------
+# For Real Router
 Data:
   benchmark: "GSM8K"
   data_dir: "/home/ouyk/project/ICDCS/Oracle/input/A100/GSM8K"
@@ -12,3 +62,25 @@ Models:
   MLP:
 Bert_Fine_Tuning:
   data_save_dir: "/home/ouyk/project/ICDCS/Oracle/input/Fine_Tuning"
+#-----------------------------------------------------------------------------
+# 输出tokens数量预测相关
+output_length_prediction:
+  # 使用输出tokens数量固定间隔分割的方式进行分类 
+  num_tokens_range_split: 16
+  range_interval: 50 
+  device : "cuda:1"
+  embedding_model: "Qwen3-Embeddings-0.6B" #"bert-embedding"
+  prediction_model: "mlp" # "knn"/"mlp"
+  model_name_embed_dim: 128
+  bert-embedding:
+    mlp_dir: "/home/ouyk/project/ICDCS/Oracle/model/MLP/MLP_Bert_Embedding.bin"
+    knn_dir: ""
+    text_embedding_dim: 768
+    hidden_size: 192
+    dtype: torch.float32
+  Qwen3-Embeddings-0.6B:
+    mlp_dir: "/home/ouyk/project/ICDCS/Oracle/model/MLP/MLP_Qwen_Embedding.pth" 
+    knn_dir: "/home/ouyk/project/ICDCS/Oracle/model/KNN/knn_model.joblib"
+    text_embedding_dim: 1024
+    hidden_size: 128
+    dtype: torch.float32

@@ -26,7 +26,7 @@ def print_sign(benchmark: str):
 # 每次装载一个结果
 def read_jsonl(config_data: Any, benchmark:str, model: str, idx: int):
     filepath = os.path.join(
-        config_data["Models"][model]["profile_result"][benchmark],
+        config_data["LLMs"][model]["profile_result"][benchmark],
         f"train_{idx}.jsonl")
     try:
         with open(filepath, 'r') as file:

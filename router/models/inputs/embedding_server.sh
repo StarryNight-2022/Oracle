@@ -1,4 +1,4 @@
-export CUDA_VISIBLE_DEVICES=2
+export CUDA_VISIBLE_DEVICES=1
 vllm serve /home/ouyk/project/Runtime/Model/Qwen3-Embedding-0.6B             \
             --api-key token-abc123 --dtype auto                              \
             --trust-remote-code                                              \

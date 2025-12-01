@@ -1,4 +1,4 @@
-Models:
+LLMs:
   model_0:
     name: "Qwen3-14B-temp-0-no-thinking"
     profile_result: 
