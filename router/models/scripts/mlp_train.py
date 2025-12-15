@@ -120,17 +120,17 @@ def main(embedding_model:str):
     data_require = {
         "input_embeddings": True,
         "output_embeddings": False,
-        "output_tokens": True,
-        "latency": False,
-        "output_tokens_label": True,
-        "latency_label": False,
+        "output_tokens": False,
+        "latency": True,
+        "output_tokens_label": False,
+        "latency_label": True,
     }
     
     # 准备数据 lable_strategy: 0->Fixed Intervals, 1->Flexible Intervals
     X, Y, range_dict = prepare_training_data(config, index_list, model_A, model_B, embedding_model, data_require=data_require, lable_strategy=2)
     
     # y = Y["latency"]
-    y = Y["output_tokens"]
+    y = Y["latency"] if "latency" in Y else Y["output_tokens"]
     
     # 分割数据
     # X_train, X_test:{"input_embeddings": np.ndarray, "output_embeddings":np.ndarray, "output_tokens":np.ndarray}

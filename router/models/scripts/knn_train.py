@@ -39,7 +39,7 @@ if __name__ == "__main__":
     # 准备数据 lable_strategy: 0->Fixed Intervals, 1->Flexible Intervals
     X, Y, range_dict = prepare_training_data(config, index_list, model_A, model_B, embedding_model, data_require=data_require, lable_strategy=2)
     
-    y = Y["latency"]
+    y = Y["latency"] if "latency" in Y else Y["output_tokens"]
     
     # 分割数据
     # X_train, X_test:{"input_embeddings": np.ndarray, "output_embeddings":np.ndarray, "output_tokens":np.ndarray}

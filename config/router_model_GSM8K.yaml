@@ -46,7 +46,7 @@ Benchmarks:
 # For Real Router
 Data:
   benchmark: "GSM8K"
-  data_dir: "/home/ouyk/project/ICDCS/Oracle/input/A100/GSM8K"
+  data_dir: "/home/ouyk/project/ICDCS/Oracle/input/A100/Raw/GSM8K"
   num_data: 7473
   embeddings_dir: "/home/ouyk/project/ICDCS/Oracle/input/A100/Embeddings/"
   labels:
