@@ -7,6 +7,7 @@ from typing import Dict, Optional, List, Tuple
 import os
 import joblib
 from router.models.router.config import MODEL_IDS
+from router.models.inputs.online_inference import online_inference
 
 # NOTE: 区别于v1与v2版本，v3版本选择的不同的技术路线，首先使用小参数量的Transformer模型进行一次推理从而得到一份输出长度数值，再使用后续模型进行预测。
 class num_tokens_predictor():

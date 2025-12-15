@@ -3,6 +3,7 @@ import numpy as np
 import random
 import datasets
 import os
+from enum import Enum
 
 # 自行实现的内容
 from router.models.inputs.queries import queries
@@ -14,66 +15,125 @@ from router.models.lables.two_steps.latency import label_generator as latency_la
 
 random_seed = 2025
 
-# data_require = {
-#     "input_embeddings": True,
-#     "output_embeddings": False,
-#     "output_tokens": False,
-#     "latency": True,
-#     "output_tokens_label": False,
-#     "latency_label": True,
-# }
+class data_choice(Enum):
+    X = 0
+    Y = 1
+    No_Need = 2
+
+data_require_template = {
+    "input_embeddings_a": data_choice.No_Need,
+    "output_embeddings_a": data_choice.No_Need,
+    "output_tokens_a": data_choice.No_Need,
+    "output_tokens_b": data_choice.No_Need,
+    "latency_a": data_choice.No_Need,
+    "latency_b": data_choice.No_Need,
+    "output_tokens_label_b": data_choice.No_Need,
+    "latency_label_b": data_choice.No_Need,
+}
 
 def prepare_training_data(config:Dict, index_list:List[int], model_A:str, model_B:str, embedding_model:str, data_require:Dict[str, bool], lable_strategy:int) -> Tuple[Dict[str, np.ndarray], Dict, Dict]:
     x = {}
-    label = {}
+    y = {}
     range_dict = {}
     # 获取到在GSM8K数据集上每一条query对应的embedding
-    if data_require["input_embeddings"]:
+    if data_require["input_embeddings_a"] != data_choice.No_Need:
         in_embedding_list = []
         for idx, time, embedding in offline_embedding(config, index_list, model_A, input_text=True, output_text=False, embedding_model=embedding_model, gen=False):
             in_embedding_list.append(embedding)
-        x_in = np.array(in_embedding_list)
-        x["input_embeddings"] = x_in
-    
+        if data_require["input_embeddings_a"] == data_choice.X:
+            x_in = np.array(in_embedding_list)
+            x["input_embeddings_a"] = x_in
+        else:
+            raise ValueError("input_embeddings_a must be X or No_Need")
+            
     # 获取到在GSM8K数据集上model_A每一条output对应的embedding
-    if data_require["output_embeddings"]:
+    if data_require["output_embeddings_a"] != data_choice.No_Need:
         out_embedding_list = []    
         for idx, time, embedding in offline_embedding(config, index_list, model_A, input_text=False, output_text=True, embedding_model=embedding_model, gen=False):
             out_embedding_list.append(embedding)
-        x_out = np.array(out_embedding_list)
-        x["output_embeddings"] = x_out
+        if data_require["output_embeddings_a"] == data_choice.X:
+            x_out = np.array(out_embedding_list)
+            x["output_embeddings_a"] = x_out
+        else:
+            raise ValueError("output_embeddings_a must be X or No_Need")
     
     # 获取到在GSM8K数据集上model_A每一条query对应的输出tokens数量
-    if data_require["output_tokens"]:
+    if data_require["output_tokens_a"] != data_choice.No_Need:
         num_tokens_list = []
         for data in offline_tokens(config, index_list, model_A):
             num_tokens_list.append(data)
-        x_tokens = np.array(num_tokens_list).reshape(-1, 1)
-        x["output_tokens"] = x_tokens
-    
-    # 获取model_B输出tokens数量的分类标签
-    if data_require["output_tokens_label"]:
-        tool = tokens_label_generator(config, index_list, model_B)
-        range_dict, output_tokens_lables = tool.gen_lables(strategy=lable_strategy)
-        label["output_tokens"] = output_tokens_lables
-        range_dict["output_tokens"] = range_dict
+        if data_require["output_tokens_a"] == data_choice.X:
+            x_tokens = np.array(num_tokens_list).reshape(-1, 1)
+            x["output_tokens_a"] = x_tokens
+        elif data_require["output_tokens_a"] == data_choice.Y:
+            y_tokens = np.array(num_tokens_list).reshape(-1, 1)
+            y["output_tokens_a"] = y_tokens
+        else:
+            raise ValueError("Don't support choice {}".format(data_require["output_tokens_a"]))
+        
+    # 获取到在GSM8K数据集上model_B每一条query对应的输出tokens数量
+    if data_require["output_tokens_b"] != data_choice.No_Need:
+        num_tokens_list = []
+        for data in offline_tokens(config, index_list, model_B):
+            num_tokens_list.append(data)
+        if data_require["output_tokens_b"] == data_choice.X:
+            x_tokens = np.array(num_tokens_list).reshape(-1, 1)
+            x["output_tokens_b"] = x_tokens 
+        elif data_require["output_tokens_b"] == data_choice.Y:
+            y_tokens = np.array(num_tokens_list).reshape(-1, 1)
+            y["output_tokens_b"] = y_tokens
+        else:
+            raise ValueError("Don't support choice {}".format(data_require["output_tokens_b"]))
     
     # 获取到在GSM8K数据集上model_A每一条query对应的推理latency
-    if data_require["latency"]:
+    if data_require["latency_a"] != data_choice.No_Need:
         latency_list = []
         for data in offline_latency(config, index_list, model_A):
             latency_list.append(data)
-        x_latency = np.array(latency_list).reshape(-1, 1)
-        x["latency"] = x_latency
+        if data_require["latency_a"] == data_choice.X:
+            x_latency = np.array(latency_list).reshape(-1, 1)
+            x["latency_a"] = x_latency
+        elif data_require["latency_a"] == data_choice.Y:
+            y_latency = np.array(latency_list).reshape(-1, 1)
+            y["latency_a"] = y_latency
+        else:
+            raise ValueError("Don't support choice {}".format(data_require["latency_a"]))
+        
+    # 获取到在GSM8K数据集上model_B每一条query对应的推理latency
+    if data_require["latency_b"] != data_choice.No_Need:
+        latency_list = []
+        for data in offline_latency(config, index_list, model_B):
+            latency_list.append(data)
+        if data_require["latency_b"] == data_choice.X:
+            x_latency = np.array(latency_list).reshape(-1, 1)
+            x["latency_b"] = x_latency
+        elif data_require["latency_b"] == data_choice.Y:
+            y_latency = np.array(latency_list).reshape(-1, 1)
+            y["latency_b"] = y_latency
+        else:
+            raise ValueError("Don't support choice {}".format(data_require["latency_b"]))
+        
+    # 获取model_B输出tokens数量的分类标签
+    if data_require["output_tokens_label_b"] != data_choice.No_Need:
+        tool = tokens_label_generator(config, index_list, model_B)
+        range_dict, output_tokens_lables = tool.gen_lables(strategy=lable_strategy)
+        if data_require["output_tokens_label_b"] == data_choice.Y:
+            y["output_tokens_label_b"] = output_tokens_lables
+        else:
+            raise ValueError("Don't support choice {}".format(data_require["output_tokens_label_b"]))
+        range_dict["output_tokens_label_b"] = range_dict
         
     # 获取model_B推理latency的分类标签
-    if data_require["latency_label"]:
+    if data_require["latency_label_b"] != data_choice.No_Need:
         tool = latency_label_generator(config, index_list, model_B)
         range_dict, latency_labels = tool.gen_lables(strategy=lable_strategy)
-        label["latency"] = latency_labels
-        range_dict["latency"] = range_dict
+        if data_require["latency_label_b"] == data_choice.Y:
+            y["latency_label_b"] = latency_labels
+        else:
+            raise ValueError("Don't support choice {}".format(data_require["latency_label_b"]))
+        range_dict["latency_label_b"] = range_dict
     
-    return (x, label, range_dict) 
+    return (x, y, range_dict) 
 
 
 def train_test_split(X: Dict[str, np.ndarray], y: np.ndarray, test_ratio: float = 0.3) -> Tuple:
@@ -86,7 +146,7 @@ def train_test_split(X: Dict[str, np.ndarray], y: np.ndarray, test_ratio: float 
     random.seed(random_seed)
     np.random.seed(random_seed)
 
-    n_samples = len(X["input_embeddings"])
+    n_samples = len(X[list(X.keys())[0]])
     n_test = int(n_samples * test_ratio)
 
     # 随机打乱索引

@@ -55,17 +55,26 @@ class cleaner():
 
 # Example 
 if __name__ == "__main__":
-    # model = "Qwen3-0.6B-temp-0-no-thinking"
-    model = "Qwen3-14B-temp-0-no-thinking"
-    # data_dir = "/home/ouyk/project/ICDCS/Oracle/input/GSM8K"
-    data_dir = "/home/ouyk/project/ICDCS/Oracle/input/Chatbot-Arena"
-    # num_data = 7473 # GSM8K
-    num_data = 2586 # Chatbot-Arena
+    model_name_list = ["Qwen3-0.6B-temp-0-no-thinking",
+                       "Qwen3-14B-temp-0-no-thinking",
+                       "Qwen3-0.6B-temp-0-en-thinking",
+                       "Qwen3-14B-temp-0-en-thinking",
+                       "Deepseek-v3.2-Exp-temp-0-chat",
+                       "Deepseek-v3.2-Exp-temp-0-reasoner",
+                       "GPT-4o-mini-temp-0",
+                       "Qwen2.5-0.5B-temp-0",
+                       "Qwen3-0.6B-FP8-temp-0-no-thinking",
+                       "Qwen3-0.6B-INT8-temp-0-no-thinking"]
+    data_dir = "/home/ouyk/project/ICDCS/Oracle/input/A100/Raw/GSM8K"
+    # data_dir = "/home/ouyk/project/ICDCS/Oracle/input/Chatbot-Arena"
+    num_data = 7473 # GSM8K
+    # num_data = 2586 # Chatbot-Arena
     
     # 获取到在GSM8K数据集上每一条query对应的num_tokens，针对"length_of_output_token_ids"进行过滤
-    tool = cleaner(data_dir, num_data, model, key="length_of_output_token_ids")
-    tool.remove(threshold=3.0)
-    
-    # 获取到在GSM8K数据集上每一条query对应的num_tokens，针对runtime进行过滤
-    tool = cleaner(data_dir, num_data, model, key="runtime")
-    tool.remove(threshold=3.0)
+    for model in model_name_list:
+        tool = cleaner(data_dir, num_data, model, key="length_of_output_token_ids")
+        tool.remove(threshold=3.0)
+        
+        # # 获取到在GSM8K数据集上每一条query对应的num_tokens，针对runtime进行过滤
+        # tool = cleaner(data_dir, num_data, model, key="runtime")
+        # tool.remove(threshold=3.0)

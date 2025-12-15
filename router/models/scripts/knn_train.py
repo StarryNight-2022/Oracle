@@ -12,7 +12,7 @@ import os
 import joblib
 
 # 自行实现的内容
-from router.models.scripts.dataset.our_datasets import prepare_training_data, train_test_split
+from router.models.scripts.dataset.our_datasets import prepare_training_data, train_test_split, data_require_template
 
 if __name__ == "__main__":
     embedding_model="Qwen3-Embeddings-0.6B"
@@ -27,14 +27,11 @@ if __name__ == "__main__":
     model_B = "Qwen3-0.6B-temp-0-no-thinking"    # use its output_length as lables
     record = os.path.join(config["Data"]["data_dir"], model_B, "without_outliers.npy")
     index_list = (np.load(record)).tolist()
-    data_require = {
-        "input_embeddings": True,
-        "output_embeddings": False,
-        "output_tokens": False,
-        "latency": True,
-        "output_tokens_label": False,
-        "latency_label": True,
-    }
+    
+    data_require = data_require_template.copy()
+    data_require["input_embeddings_a"] = True
+    data_require["output_tokens_a"] = True
+    data_require["latency_a"] = True
     
     # 准备数据 lable_strategy: 0->Fixed Intervals, 1->Flexible Intervals
     X, Y, range_dict = prepare_training_data(config, index_list, model_A, model_B, embedding_model, data_require=data_require, lable_strategy=2)
@@ -50,10 +47,10 @@ if __name__ == "__main__":
     knn = KNeighborsClassifier(n_neighbors, weights="distance", metric="minkowski")
     
     # train KNN
-    knn.fit(X_train["input_embeddings"], y_train)
+    knn.fit(X_train["input_embeddings_a"], y_train)
     
     # evaluate KNN
-    accuracy = knn.score(X_test["input_embeddings"], y_test)
+    accuracy = knn.score(X_test["input_embeddings_a"], y_test)
     print(f"模型准确率: {accuracy:.4f}")
     
     # 保存模型
@@ -62,8 +59,8 @@ if __name__ == "__main__":
     
     #
     knn_1 = joblib.load(model_path)
-    knn_1.fit(X_train["input_embeddings"], y_train)
+    knn_1.fit(X_train["input_embeddings_a"], y_train)
     
     # evaluate KNN
-    accuracy = knn_1.score(X_test["input_embeddings"], y_test)
+    accuracy = knn_1.score(X_test["input_embeddings_a"], y_test)
     print(f"模型准确率: {accuracy:.4f}")

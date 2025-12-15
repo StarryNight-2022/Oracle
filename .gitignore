@@ -26,3 +26,8 @@ raw_input/*
 export_env_params.sh
 model/*
 logs/*
+*.png
+*.pth
+*.npy
+*.safetensores
+*.ckpt

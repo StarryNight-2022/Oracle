@@ -8,6 +8,9 @@ import traceback
 import time
 import numpy as np
 
+
+from router.models.inputs.online_inference import online_inference
+
 class online_inference():
     # 需要指定index_list参数来确保移除了指定的outliers
     '''

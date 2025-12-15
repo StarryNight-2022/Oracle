@@ -9,7 +9,7 @@ import numpy as np
 
 # 自定义内容
 from router.models.modeling.modeling import MLP, MLP_1
-from router.models.scripts.dataset.our_datasets import prepare_training_data, train_test_split
+from router.models.scripts.dataset.our_datasets import prepare_training_data, train_test_split, data_require_template
 
 # 训练函数
 def train_model(model, train_loader, val_loader, num_epochs=100, learning_rate=0.001, weight_decay=1e-5, device="cpu"):
@@ -117,14 +117,10 @@ def main(embedding_model:str):
     model_B = "Qwen3-0.6B-temp-0-no-thinking"    # use its output_length as lables
     record = os.path.join(config["Data"]["data_dir"], model_B, "without_outliers.npy")
     index_list = (np.load(record)).tolist()
-    data_require = {
-        "input_embeddings": True,
-        "output_embeddings": False,
-        "output_tokens": False,
-        "latency": True,
-        "output_tokens_label": False,
-        "latency_label": True,
-    }
+    data_require = data_require_template.copy()
+    data_require["input_embeddings_a"] = True
+    data_require["output_tokens_a"] = True
+    data_require["latency_a"] = True
     
     # 准备数据 lable_strategy: 0->Fixed Intervals, 1->Flexible Intervals
     X, Y, range_dict = prepare_training_data(config, index_list, model_A, model_B, embedding_model, data_require=data_require, lable_strategy=2)
@@ -137,8 +133,8 @@ def main(embedding_model:str):
     X_train, X_test, y_train, y_test, _, _ = train_test_split(X, y, test_ratio=0.2)
     
     # 转换为TensorDataset
-    train_dataset = TensorDataset(torch.tensor(X_train["input_embeddings"], dtype=torch.float32), torch.tensor(y_train, dtype=torch.long))
-    val_dataset = TensorDataset(torch.tensor(X_test["input_embeddings"], dtype=torch.float32), torch.tensor(y_test, dtype=torch.long))
+    train_dataset = TensorDataset(torch.tensor(X_train["input_embeddings_a"], dtype=torch.float32), torch.tensor(y_train, dtype=torch.long))
+    val_dataset = TensorDataset(torch.tensor(X_test["input_embeddings_a"], dtype=torch.float32), torch.tensor(y_test, dtype=torch.long))
     
     train_loader = DataLoader(train_dataset, batch_size=batch_size, shuffle=True)
     val_loader = DataLoader(val_dataset, batch_size=batch_size, shuffle=False)
