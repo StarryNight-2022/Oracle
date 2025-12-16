@@ -14,6 +14,20 @@ MODEL_IDS:Dict[str, int] = {
     "Qwen3-14B-temp-0-no-thinking": 9,
 }
 
+# TODO
+LLM_MAX_TOKENS:Dict[str, int] = {
+    "Deepseek-v3.2-Exp-temp-0-chat": 0,
+    "Deepseek-v3.2-Exp-temp-0-reasoner": 1,
+    "GPT-4o-mini-temp-0": 2,
+    "Qwen2.5-0.5B-temp-0": 3,
+    "Qwen3-0.6B-FP8-temp-0-no-thinking": 4,
+    "Qwen3-0.6B-INT8-temp-0-no-thinking": 5,
+    "Qwen3-0.6B-temp-0-en-thinking": 6,
+    "Qwen3-0.6B-temp-0-no-thinking": 7,
+    "Qwen3-14B-temp-0-en-thinking": 8,
+    "Qwen3-14B-temp-0-no-thinking": 9,
+}
+
 # latency = a * num_tokens + b
 LLM_TIME_PARAMS:Dict[str, Dict[str, float]] = {
     "Qwen3-0.6B-temp-0-no-thinking": {

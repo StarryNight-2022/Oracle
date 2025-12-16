@@ -10,14 +10,14 @@ import yaml
 import numpy as np
 
 # 自定义内容
-from router.models.modeling.modeling import MLP_3
+from router.models.modeling.modeling import MLP_3_Comb
 from router.models.scripts.dataset.our_datasets import prepare_training_data, train_test_split, data_require_template, data_choice
 
 # 训练函数
 def train_model(model, train_loader, val_loader, num_epochs=100, learning_rate=0.001, weight_decay=1e-5, device="cpu"):
-    # criterion = nn.MSELoss()
-    criterion = nn.L1Loss()
-    optimizer = optim.Adam(model.parameters(), lr=learning_rate, weight_decay=weight_decay)
+    criterion = nn.MSELoss()
+    # 优化器仅优化block2的参数
+    optimizer = optim.Adam(model.block2.parameters(), lr=learning_rate, weight_decay=weight_decay)
     
     train_losses = []
     val_losses = []
@@ -103,7 +103,6 @@ def main(embedding_model:str):
         
     model_A = "Qwen3-0.6B-temp-0-no-thinking"   # use its embedding as inputs
     model_B = "Qwen3-14B-temp-0-no-thinking"    # use its output_length as lables
-    max_tokens = 32768
     record_a = os.path.join(config["Data"]["data_dir"], model_A, "without_outliers.npy")
     record_b = os.path.join(config["Data"]["data_dir"], model_B, "without_outliers.npy")
     index_list_a = np.load(record_a).tolist()
@@ -130,9 +129,14 @@ def main(embedding_model:str):
     val_loader = DataLoader(val_dataset, batch_size=batch_size, shuffle=False)
     
     # 初始化模型
-    model = MLP_3(embedding_dim=input_size, device=device, dtype=dtype)
+    model = MLP_3_Comb(embedding_dim=input_size, device=device, dtype=dtype)
     print(model)
-    # model.load_state_dict(torch.load("/home/ouyk/project/ICDCS/Oracle/mlp_model_2.1.pth"))
+    # 仅为model.block1加载权重
+    block1_dict = torch.load("/home/ouyk/project/ICDCS/Oracle/mlp_model_2.1.pth")
+    model.block1.load_state_dict(block1_dict)
+    # 冻结block1的参数
+    for param in model.block1.parameters():
+        param.requires_grad = False
     
     # 训练模型
     train_losses, val_losses = train_model(

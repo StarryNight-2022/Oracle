@@ -10,7 +10,7 @@ import yaml
 import numpy as np
 
 # 自定义内容
-from router.models.modeling.modeling import MLP_3
+from router.models.modeling.modeling import MLP_3_Comb
 from router.models.scripts.dataset.our_datasets import prepare_training_data, train_test_split, data_require_template, data_choice
 
 # 评估函数
@@ -120,8 +120,8 @@ def main(embedding_model:str):
     eval_loader = DataLoader(eval_dataset, batch_size=batch_size, shuffle=False)
     
     # 初始化模型
-    model = MLP_3(embedding_dim=input_size, device=device, dtype=dtype)
-    model.load_state_dict(torch.load("/home/ouyk/project/ICDCS/Oracle/mlp_model_5_mlp_4.pth"))
+    model = MLP_3_Comb(embedding_dim=input_size, device=device, dtype=dtype)
+    model.load_state_dict(torch.load("/home/ouyk/project/ICDCS/Oracle/mlp_model_3.pth"))
     
     # 评估模型
     eval_model(
