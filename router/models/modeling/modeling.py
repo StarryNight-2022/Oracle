@@ -197,3 +197,36 @@ class MFModel(torch.nn.Module):
             # 如果失败，尝试 PyTorch 格式
             state_dict = torch.load(path, map_location='cpu')
         self.load_state_dict(state_dict)
+        
+class MLP_3(nn.Module):
+    def __init__(self, embedding_dim:int, device:torch.device, dtype:torch.dtype):
+        super(MLP_3, self).__init__()
+        self.device = device
+        self.dtype = dtype
+        self.fc1 = nn.Linear(in_features=embedding_dim, out_features=1, device=self.device, dtype=self.dtype)
+        self.fc2 = nn.Linear(in_features=2, out_features=1, device=self.device, dtype=self.dtype)
+        self.relu = nn.ReLU()
+    
+    def forward(self, prompt_embed:torch.Tensor, output_length:torch.Tensor)->torch.Tensor:
+        x = self.fc1(prompt_embed) # [batch_size, embedding_dim] -> [batch_size, 1]
+        x = self.relu(x) # [batch_size, 1]
+        x = torch.cat([x, output_length], dim=1) # [batch_size, 1] + [batch_size, 1] -> [batch_size, 2]
+        x = self.fc2(x) # [batch_size, 2] -> [batch_size, 1]
+        return x
+    
+# class MLP_3(nn.Module):
+#     def __init__(self, embedding_dim:int, device:torch.device, dtype:torch.dtype):
+#         super(MLP_3, self).__init__()
+#         self.device = device
+#         self.dtype = dtype
+#         self.fc1 = nn.Linear(in_features=embedding_dim, out_features=1, device=self.device, dtype=self.dtype)
+#         self.fc2 = nn.Linear(in_features=2, out_features=1, device=self.device, dtype=self.dtype)
+#         self.relu = nn.ReLU()
+    
+#     def forward(self, prompt_embed:torch.Tensor, output_length:torch.Tensor)->torch.Tensor:
+#         x = self.fc1(prompt_embed) # [batch_size, embedding_dim] -> [batch_size, 1]
+#         x = self.relu(x) # [batch_size, 1]
+#         x = torch.cat([x, output_length], dim=1) # [batch_size, 1] + [batch_size, 1] -> [batch_size, 2]
+#         x = self.fc2(x) # [batch_size, 2] -> [batch_size, 1]
+#         x = self.relu(x) # [batch_size, 1]
+#         return x
