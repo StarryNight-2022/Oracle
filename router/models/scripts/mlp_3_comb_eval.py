@@ -121,7 +121,7 @@ def main(embedding_model:str):
     
     # 初始化模型
     model = MLP_3_Comb(embedding_dim=input_size, device=device, dtype=dtype)
-    model.load_state_dict(torch.load("/home/ouyk/project/ICDCS/Oracle/mlp_model_3.pth"))
+    model.load_state_dict(torch.load("/home/ouyk/project/ICDCS/Oracle/mlp_model_6_Norm_Comb.pth"))
     
     # 评估模型
     eval_model(

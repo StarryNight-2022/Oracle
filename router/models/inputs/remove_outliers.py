@@ -34,11 +34,16 @@ class cleaner():
             print(traceback.format_exc())
             return None
         
-    def remove_outliers(self, m: float = 3.0) -> List[Tuple[int, int]]:
+    def remove_outliers_1(self, m: float = 3.0) -> List[Tuple[int, int]]:
         output_len = [item[1] for item in self.data_lists]
         mean = np.mean(output_len)
         std = np.std(output_len)
         filtered_data = [item for item in self.data_lists if abs(item[1] - mean) <= m * std]
+        return filtered_data    
+    
+    # 移除output_length大于threshold的样本
+    def remove_outliers_2(self, threshold: float = 700) -> List[Tuple[int, int]]:
+        filtered_data = [item for item in self.data_lists if item[1] <= threshold]
         return filtered_data    
     
     def remove(self, threshold:float):
@@ -46,7 +51,7 @@ class cleaner():
             self.data_dir,
             f"without_outliers.npy")
         
-        filtered_data = self.remove_outliers(m=threshold)
+        filtered_data = self.remove_outliers_2(threshold=threshold)
         index_without_outliers = [item[0] for item in filtered_data]
         
         # 写入到文件中
@@ -73,7 +78,7 @@ if __name__ == "__main__":
     # 获取到在GSM8K数据集上每一条query对应的num_tokens，针对"length_of_output_token_ids"进行过滤
     for model in model_name_list:
         tool = cleaner(data_dir, num_data, model, key="length_of_output_token_ids")
-        tool.remove(threshold=3.0)
+        tool.remove(threshold=700)
         
         # # 获取到在GSM8K数据集上每一条query对应的num_tokens，针对runtime进行过滤
         # tool = cleaner(data_dir, num_data, model, key="runtime")

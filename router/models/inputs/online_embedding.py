@@ -33,7 +33,7 @@ class online_embedding():
             self.client = OpenAI(
                 api_key="",
                 base_url="http://localhost:8000/v1",
-            )  
+            )
         else:
             raise NotImplementedError(f"Don't support that embedding model:{self.model}")
         

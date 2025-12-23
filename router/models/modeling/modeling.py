@@ -248,4 +248,114 @@ class MLP_3_Comb(nn.Module):
         x = self.block1(prompt_embed, output_length) # [batch_size, 1]
         x = self.block2(prompt_embed, x) # [batch_size, 1]
         return x
+    
+# # 将小模型的Output Embedding加入到模型输入中。   
+# class MLP_4_Regression(nn.Module):
+#     def __init__(self, embedding_dim:int, device:torch.device, dtype:torch.dtype):
+#         super(MLP_4_Regression, self).__init__()
+#         self.device = device
+#         self.dtype = dtype
+#         self.fc1 = nn.Linear(in_features=embedding_dim, out_features=128, device=self.device, dtype=self.dtype) # 1024->128
+#         self.fc2 = nn.Linear(in_features=128, out_features=16, device=self.device, dtype=self.dtype) # 128->16
+#         self.fc3 = nn.Linear(in_features=embedding_dim, out_features=128, device=self.device, dtype=self.dtype) # 1024->128
+#         self.fc4 = nn.Linear(in_features=128, out_features=16, device=self.device, dtype=self.dtype) # 128->16
+#         self.fc5 = nn.Linear(in_features=48, out_features=16, device=self.device, dtype=self.dtype) # 16+16+16->16
+#         self.fc6 = nn.Linear(in_features=16, out_features=1, device=self.device, dtype=self.dtype) # 16->1
+#         self.relu = nn.ReLU()
+    
+#     def forward(self, prompt_embed:torch.Tensor, output_embed:torch.Tensor, output_length:torch.Tensor)->torch.Tensor:
+#         a = self.fc1(prompt_embed) # [batch_size, embedding_dim] -> [batch_size, 128]
+#         a = self.fc2(a) # [batch_size, 128] -> [batch_size, 16]
+#         a = self.relu(a) 
+#         b = self.fc3(output_embed) # [batch_size, embedding_dim] -> [batch_size, 128]
+#         b = self.fc4(b) # [batch_size, 128] -> [batch_size, 16]
+#         b = self.relu(b)
+#         # 对于output_length，使用y=-ln(output_length/50)进行变换
+#         c = -torch.log(output_length/50)
+#         # c:[batch_size, 1] -> [batch_size, 16]
+#         c = c.unsqueeze(1).expand(-1, 16)
+#         x = torch.cat([a, b, c], dim=1)
+#         x = self.fc5(x) 
+#         # x = self.relu(x) # [batch_size, 1]
+#         # 对于输出结果，进行反变换，得到原始的output_length
+#         x = torch.exp(-x) * 50 # [batch_size, 1]
+#         return x 
+
+# 将小模型的Output Embedding加入到模型输入中。   
+# class MLP_4_Classification(nn.Module):
+#     def __init__(self, config, embedding_dim:int, device:torch.device, dtype:torch.dtype):
+#         super(MLP_4_Classification, self).__init__()
+#         self.device = device
+#         self.dtype = dtype
+#         self.n_classes = config["Data"]["labels"]["num_tokens_range_split"]
+#         self.fc1 = nn.Linear(in_features=embedding_dim, out_features=128, device=self.device, dtype=self.dtype) # 1024->128
+#         self.fc2 = nn.Linear(in_features=128, out_features=16, device=self.device, dtype=self.dtype) # 128->16
+#         self.fc3 = nn.Linear(in_features=embedding_dim, out_features=128, device=self.device, dtype=self.dtype) # 1024->128
+#         self.fc4 = nn.Linear(in_features=128, out_features=16, device=self.device, dtype=self.dtype) # 128->16
+#         self.fc5 = nn.Linear(in_features=48, out_features=self.n_classes, device=self.device, dtype=self.dtype) # 16+16+16->16
+#         self.softmax = nn.Softmax(dim=1)
+    
+#     def forward(self, prompt_embed:torch.Tensor, output_embed:torch.Tensor, output_length:torch.Tensor)->torch.Tensor:
+#         a = self.fc1(prompt_embed) # [batch_size, embedding_dim] -> [batch_size, 128]
+#         a = self.fc2(a) # [batch_size, 128] -> [batch_size, 16]
+#         b = self.fc3(output_embed) # [batch_size, embedding_dim] -> [batch_size, 128]
+#         b = self.fc4(b) # [batch_size, 128] -> [batch_size, 16]
+#         # 对于output_length，使用y=-ln(output_length/50)进行变换
+#         c = (-torch.log(output_length/50))
+#         # c:[batch_size, 1] -> [batch_size, 16]
+#         c = c.expand(-1, 16)
+#         x = torch.cat([a, b, c], dim=1)
+#         x = self.softmax(x)
+#         return x
+
+class MLP_4(nn.Module):
+    def __init__(self, embedding_dim:int, device:torch.device, dtype:torch.dtype):
+        super(MLP_4, self).__init__()
+        self.device = device
+        self.dtype = dtype
+        self.embedding_dim = embedding_dim
+        self.fc1 = nn.Linear(in_features=2*self.embedding_dim+1, out_features=128, device=self.device, dtype=self.dtype) # 1024->128
+        self.fc2 = nn.Linear(in_features=128, out_features=128, device=self.device, dtype=self.dtype) # 128->128
+    
+    def forward(self, prompt_embed:torch.Tensor, output_embed:torch.Tensor, output_length:torch.Tensor)->torch.Tensor:
+        c = (-torch.log(output_length/50))
+        # c = c.expand(-1, self.embedding_dim)
+        # c = self.dropout(c)
+        x = torch.cat([prompt_embed, output_embed, c], dim=1) # [batch_size, 2*embedding_dim+1]
+        x = self.fc1(x) # [batch_size, 2*embedding_dim+1] -> [batch_size, 128]
+        x = self.fc2(x) # hidden_layer: [batch_size, 128] -> [batch_size, 128]
+        return x
+    
+class MLP_4_Regression(nn.Module):
+    def __init__(self, embedding_dim:int, device:torch.device, dtype:torch.dtype):
+        super(MLP_4_Regression, self).__init__()
+        self.device = device
+        self.dtype = dtype
+        self.base = MLP_4(embedding_dim, self.device, self.dtype)
+        self.fc3 = nn.Linear(in_features=128, out_features=1, device=self.device, dtype=self.dtype) # 128->1
+        self.relu = nn.ReLU()
         
+    def forward(self, prompt_embed:torch.Tensor, output_embed:torch.Tensor, output_length:torch.Tensor):
+        x = self.base(prompt_embed, output_embed, output_length) # [batch_size, 128]
+        x = self.fc3(x) # [batch_size, 128] -> [batch_size, 1]
+        # x = self.relu(x) # [batch_size, 1]
+        x = torch.exp(-x) * 50 # [batch_size, 1]
+        return x
+    
+class MLP_4_Classification(nn.Module):
+    def __init__(self, config, embedding_dim:int, device:torch.device, dtype:torch.dtype):
+        super(MLP_4_Classification, self).__init__()
+        self.device = device
+        self.dtype = dtype
+        self.n_classes = config["Data"]["labels"]["num_tokens_range_split"]
+        self.base = MLP_4(embedding_dim, self.device, self.dtype)
+        self.fc3 = nn.Linear(in_features=128, out_features=self.n_classes, device=self.device, dtype=self.dtype) # 128->n_classes
+        self.softmax = nn.Softmax(dim=1)
+        
+    def forward(self, prompt_embed:torch.Tensor, output_embed:torch.Tensor, output_length:torch.Tensor):
+        x = self.base(prompt_embed, output_embed, output_length) # [batch_size, 128]
+        x = self.fc3(x) # [batch_size, 128] -> [batch_size, 16]
+        x = self.softmax(x) # [batch_size, 16]
+        return x
+        
+    

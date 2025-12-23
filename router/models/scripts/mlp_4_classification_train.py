@@ -1,4 +1,4 @@
-# 该脚本用于训练MLP_3模型，模型结合了prompt_embed和output_length两个输入，目标是预测输出长度
+# 该脚本用于训练MLP_4_Classification模型，模型结合了prompt_embed、output_embedding以及output_length三个输入，目标是预测输出长度
 
 import torch
 import torch.nn as nn
@@ -10,14 +10,13 @@ import yaml
 import numpy as np
 
 # 自定义内容
-from router.models.modeling.modeling import MLP_3_Comb
+from router.models.modeling.modeling import MLP_4_Classification
 from router.models.scripts.dataset.our_datasets import prepare_training_data, train_test_split, data_require_template, data_choice
 
 # 训练函数
 def train_model(model, train_loader, val_loader, num_epochs=100, learning_rate=0.001, weight_decay=1e-5, device="cpu"):
-    criterion = nn.L1Loss()
-    # 优化器仅优化block2的参数
-    optimizer = optim.Adam(model.block2.parameters(), lr=learning_rate, weight_decay=weight_decay)
+    criterion = nn.CrossEntropyLoss()
+    optimizer = optim.Adam(model.parameters(), lr=learning_rate, weight_decay=weight_decay)
     
     train_losses = []
     val_losses = []
@@ -27,18 +26,22 @@ def train_model(model, train_loader, val_loader, num_epochs=100, learning_rate=0
         model.train()
         train_loss = 0.0
         train_total = 0
+        train_accs = []
+        val_accs = []
         
-        for inputs_prompt_embed, inputs_output_length, targets in train_loader:
+        for inputs_prompt_embed, outputs_embed, inputs_output_length, targets in train_loader:
             inputs_prompt_embed = inputs_prompt_embed.to(device)
+            outputs_embed = outputs_embed.to(device)
             inputs_output_length = inputs_output_length.to(device)
             targets = targets.to(device)
             optimizer.zero_grad()
-            outputs = model(inputs_prompt_embed, inputs_output_length)
+            outputs = model(inputs_prompt_embed, outputs_embed, inputs_output_length)
             loss = criterion(outputs, targets)
             loss.backward()
             optimizer.step()
             train_loss += loss.item()
             train_total += targets.size(0)
+            train_accs.append((outputs.argmax(dim=1) == targets).float().mean().item())
         
         # 验证阶段
         model.eval()
@@ -46,14 +49,16 @@ def train_model(model, train_loader, val_loader, num_epochs=100, learning_rate=0
         val_total = 0
         
         with torch.no_grad():
-            for inputs_prompt_embed, inputs_output_length, targets in val_loader:
+            for inputs_prompt_embed, outputs_embed, inputs_output_length, targets in val_loader:
                 inputs_prompt_embed = inputs_prompt_embed.to(device)
+                outputs_embed = outputs_embed.to(device)
                 inputs_output_length = inputs_output_length.to(device)
                 targets = targets.to(device)
-                outputs = model(inputs_prompt_embed, inputs_output_length)
+                outputs = model(inputs_prompt_embed, outputs_embed, inputs_output_length)
                 loss = criterion(outputs, targets)
                 val_loss += loss.item()
                 val_total += targets.size(0)
+                val_accs.append((outputs.argmax(dim=1) == targets).float().mean().item())
         
         # 计算平均损失和准确率
         train_loss_avg = train_loss / len(train_loader)
@@ -66,6 +71,8 @@ def train_model(model, train_loader, val_loader, num_epochs=100, learning_rate=0
             print(f'Epoch [{epoch+1}/{num_epochs}]')
             print(f'Train Loss: {train_loss_avg:.4f}')
             print(f'Val Loss: {val_loss_avg:.4f}')
+            print(f'Train Acc: {np.mean(train_accs):.4f}')
+            print(f'Val Acc: {np.mean(val_accs):.4f}')
             print('-' * 50)
     
     return train_losses, val_losses
@@ -86,10 +93,10 @@ def main(embedding_model:str):
     if embedding_model == "Qwen3-Embeddings-0.6B":
         dtype=torch.float32
         input_size = 1024
-        num_epochs = 1000
+        num_epochs = 400
         batch_size = 32
-        learning_rate = 1e-4
-        weight_decay = 1e-5
+        learning_rate = 5e-3
+        weight_decay = 1e-4
     elif embedding_model == "bert-embedding":
         dtype=torch.float32
         input_size = 768
@@ -103,6 +110,7 @@ def main(embedding_model:str):
         
     model_A = "Qwen3-0.6B-temp-0-no-thinking"   # use its embedding as inputs
     model_B = "Qwen3-14B-temp-0-no-thinking"    # use its output_length as lables
+    max_tokens = 32768
     record_a = os.path.join(config["Data"]["data_dir"], model_A, "without_outliers.npy")
     record_b = os.path.join(config["Data"]["data_dir"], model_B, "without_outliers.npy")
     index_list_a = np.load(record_a).tolist()
@@ -110,33 +118,29 @@ def main(embedding_model:str):
     index_list = list(set(index_list_a) & set(index_list_b)) # 取交集
     data_require = data_require_template.copy()
     data_require["input_embeddings_a"] = data_choice.X
+    data_require["output_embeddings_a"] = data_choice.X
     data_require["output_tokens_a"] = data_choice.X
-    data_require["output_tokens_b"] = data_choice.Y
+    data_require["output_tokens_label_b"] = data_choice.Y
     
     # 准备数据 lable_strategy: 0->Fixed Intervals, 1->Flexible Intervals
-    X, Y, range_dict = prepare_training_data(config, index_list, model_A, model_B, embedding_model, data_require=data_require, lable_strategy=2)
-    
-    y = Y["output_tokens_b"]
+    X, Y, range_dict = prepare_training_data(config, index_list, model_A, model_B, embedding_model, data_require=data_require, lable_strategy=1)
+    print(f"range_dict: {range_dict}")
+    y = Y["output_tokens_label_b"]
     
     # 分割数据
     X_train, X_test, y_train, y_test, _, _ = train_test_split(X, y, test_ratio=0.2)
     
     # 转换为TensorDataset
-    train_dataset = TensorDataset(torch.tensor(X_train["input_embeddings_a"], dtype=torch.float32), torch.tensor(X_train["output_tokens_a"], dtype=torch.float32), torch.tensor(y_train, dtype=torch.float32))
-    val_dataset = TensorDataset(torch.tensor(X_test["input_embeddings_a"], dtype=torch.float32), torch.tensor(X_test["output_tokens_a"], dtype=torch.float32), torch.tensor(y_test, dtype=torch.float32))
+    train_dataset = TensorDataset(torch.tensor(X_train["input_embeddings_a"], dtype=torch.float32), torch.tensor(X_train["output_embeddings_a"], dtype=torch.float32), torch.tensor(X_train["output_tokens_a"], dtype=torch.float32), torch.tensor(y_train, dtype=torch.int64))
+    val_dataset = TensorDataset(torch.tensor(X_test["input_embeddings_a"], dtype=torch.float32), torch.tensor(X_test["output_embeddings_a"], dtype=torch.float32), torch.tensor(X_test["output_tokens_a"], dtype=torch.float32), torch.tensor(y_test, dtype=torch.int64))
     
     train_loader = DataLoader(train_dataset, batch_size=batch_size, shuffle=True)
     val_loader = DataLoader(val_dataset, batch_size=batch_size, shuffle=False)
     
     # 初始化模型
-    model = MLP_3_Comb(embedding_dim=input_size, device=device, dtype=dtype)
+    model = MLP_4_Classification(config=config, embedding_dim=input_size, device=device, dtype=dtype)
     print(model)
-    # 仅为model.block1加载权重
-    block1_dict = torch.load("/home/ouyk/project/ICDCS/Oracle/mlp_model_5_Norm.pth")
-    model.block1.load_state_dict(block1_dict)
-    # 冻结block1的参数
-    for param in model.block1.parameters():
-        param.requires_grad = False
+    # model.load_state_dict(torch.load("/home/ouyk/project/ICDCS/Oracle/mlp_model_2.1.pth"))
     
     # 训练模型
     train_losses, val_losses = train_model(
@@ -150,7 +154,6 @@ def main(embedding_model:str):
     # 绘制训练曲线
     plt.figure(figsize=(12, 4))
     
-    plt.subplot(1, 2, 1)
     plt.plot(train_losses, label='Train Loss')
     plt.plot(val_losses, label='Val Loss')
     plt.xlabel('Epoch')
@@ -161,8 +164,6 @@ def main(embedding_model:str):
     plt.tight_layout()
     plt.savefig('training_curves.png')
     
-    
-
 if __name__ == '__main__':
     embedding_model="Qwen3-Embeddings-0.6B"
     # embedding_model="bert-embedding"

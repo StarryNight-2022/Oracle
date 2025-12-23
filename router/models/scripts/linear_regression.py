@@ -4,7 +4,7 @@
 import numpy as np
 from sklearn.linear_model import LinearRegression
 from sklearn.model_selection import train_test_split as sklearn_train_test_split
-from sklearn.metrics import mean_squared_error, r2_score
+from sklearn.metrics import mean_squared_error, mean_absolute_error, r2_score
 import joblib
 import os
 
@@ -27,18 +27,21 @@ if __name__ == "__main__":
     n_neighbors = config["Data"]["labels"]["num_tokens_range_split"]
         
     model_A = "Qwen3-0.6B-temp-0-no-thinking"   # use its embedding as inputs
-    model_B = "Deepseek-v3.2-Exp-temp-0-chat"    # use its output_length as labels
-    record = os.path.join(config["Data"]["data_dir"], model_B, "without_outliers.npy")
-    index_list = np.load(record).tolist()
-
+    model_B = "Qwen3-14B-temp-0-no-thinking"    # use its output_length as lables
+    max_tokens = 32768
+    record_a = os.path.join(config["Data"]["data_dir"], model_A, "without_outliers.npy")
+    record_b = os.path.join(config["Data"]["data_dir"], model_B, "without_outliers.npy")
+    index_list_a = np.load(record_a).tolist()
+    index_list_b = np.load(record_b).tolist()
+    index_list = list(set(index_list_a) & set(index_list_b)) # 取交集
     data_require = data_require_template.copy()
     data_require["output_tokens_a"] = data_choice.X
-    data_require["latency_b"] = data_choice.Y
+    data_require["output_tokens_b"] = data_choice.Y
     
     # 准备数据 label_strategy: 0->Fixed Intervals, 1->Flexible Intervals
     X, Y, range_dict = prepare_training_data(config, index_list, model_A, model_B, embedding_model, data_require=data_require, lable_strategy=2)
     
-    y = Y["latency_b"]
+    y = Y["output_tokens_b"]
     
     # 确保X["output_tokens_a"]是二维数组
     X_features = X["output_tokens_a"]
@@ -76,9 +79,11 @@ if __name__ == "__main__":
     
     # 计算性能指标
     mse = mean_squared_error(y_test, y_pred)
+    mae = mean_absolute_error(y_test, y_pred)
     r2 = r2_score(y_test, y_pred)
     
     print(f"均方误差 (MSE): {mse:.2f}")
+    print(f"平均绝对误差 (MAE): {mae:.2f}")
     print(f"R²分数: {r2:.4f}")
     
     # 输出一些预测示例
@@ -122,7 +127,7 @@ if __name__ == "__main__":
              bbox=dict(boxstyle='round', facecolor='wheat', alpha=0.8))
     
     # 添加性能指标到图中
-    metrics_text = f"MSE = {mse:.2f}\nR² = {r2:.4f}"
+    metrics_text = f"MSE = {mse:.2f}\nMAE = {mae:.2f}\nR² = {r2:.4f}"
     plt.text(0.05, 0.85, metrics_text, transform=plt.gca().transAxes,
              fontsize=11, verticalalignment='top',
              bbox=dict(boxstyle='round', facecolor='lightblue', alpha=0.8))

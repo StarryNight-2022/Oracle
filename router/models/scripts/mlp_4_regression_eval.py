@@ -1,4 +1,4 @@
-# 该脚本用于训练MLP_3模型，模型结合了prompt_embed和output_length两个输入，目标是预测输出长度
+# 该脚本用于训练MLP_4模型，模型结合了prompt_embed、output_embedding以及output_length三个输入，目标是预测输出长度
 
 import torch
 import torch.nn as nn
@@ -10,7 +10,7 @@ import yaml
 import numpy as np
 
 # 自定义内容
-from router.models.modeling.modeling import MLP_3
+from router.models.modeling.modeling import MLP_4
 from router.models.scripts.dataset.our_datasets import prepare_training_data, train_test_split, data_require_template, data_choice
 
 # 评估函数
@@ -20,11 +20,12 @@ def eval_model(model, eval_loader, device="cpu"):
     output_list = []
     
     with torch.no_grad():
-        for inputs_prompt_embed, inputs_output_length, targets in eval_loader:
+        for inputs_prompt_embed, inputs_output_embed, inputs_output_length, targets in eval_loader:
             inputs_prompt_embed = inputs_prompt_embed.to(device)
+            inputs_output_embed = inputs_output_embed.to(device)
             inputs_output_length = inputs_output_length.to(device)
             targets = targets.to(device)
-            outputs = model(inputs_prompt_embed, inputs_output_length)
+            outputs = model(inputs_prompt_embed, inputs_output_embed, inputs_output_length)
             
             target_list.append(targets.cpu().numpy())
             output_list.append(outputs.cpu().numpy())
@@ -37,7 +38,7 @@ def eval_model(model, eval_loader, device="cpu"):
     mse = np.mean((targets_all - outputs_all) ** 2)
     mae = np.mean(np.abs(targets_all - outputs_all))
     
-    print("Processed by MLP_3:")
+    print("Processed by MLP_4:")
     print(f"MSE: {mse:.4f}")
     print(f"MAE: {mae:.4f}")
     print(f"RMSE: {np.sqrt(mse):.4f}")
@@ -51,7 +52,7 @@ def eval_model(model, eval_loader, device="cpu"):
     plt.ylabel("Predicted Output Tokens")
     plt.title(f'Actual vs Predicted (MSE: {mse:.2f}, MAE: {mae:.2f})')
     plt.grid(True, alpha=0.3)
-    plt.savefig("mlp_3_eval.png")
+    plt.savefig("mlp_4_eval.png")
     plt.close()
 
 # 主函数
@@ -95,6 +96,7 @@ def main(embedding_model:str):
     index_list = list(set(index_list_a) & set(index_list_b)) # 取交集
     data_require = data_require_template.copy()
     data_require["input_embeddings_a"] = data_choice.X
+    data_require["output_embeddings_a"] = data_choice.X
     data_require["output_tokens_a"] = data_choice.X
     data_require["output_tokens_b"] = data_choice.Y
     
@@ -106,7 +108,7 @@ def main(embedding_model:str):
     a = X["input_embeddings_a"]
     b = y
     
-    print("Before MLP_3 Processing:")
+    print("Before MLP_4 Processing:")
     mse = np.mean((a - b) ** 2)
     mae = np.mean(np.abs(a - b))
     
@@ -114,13 +116,18 @@ def main(embedding_model:str):
     print(f"MAE: {mae:.4f}")
     print(f"RMSE: {np.sqrt(mse):.4f}")
     
+    y = Y["output_tokens_b"]
+    
+    # 分割数据
+    _, X_test, _, y_test, _, _ = train_test_split(X, y, test_ratio=0.2)
+    
     # 转换为TensorDataset
-    eval_dataset = TensorDataset(torch.tensor(X["input_embeddings_a"], dtype=torch.float32), torch.tensor(X["output_tokens_a"], dtype=torch.float32), torch.tensor(y, dtype=torch.float32))
-      
-    eval_loader = DataLoader(eval_dataset, batch_size=batch_size, shuffle=False)
+    val_dataset = TensorDataset(torch.tensor(X_test["input_embeddings_a"], dtype=torch.float32), torch.tensor(X_test["output_embeddings_a"], dtype=torch.float32), torch.tensor(X_test["output_tokens_a"], dtype=torch.float32), torch.tensor(y_test, dtype=torch.float32))
+    
+    eval_loader = DataLoader(val_dataset, batch_size=batch_size, shuffle=False)
     
     # 初始化模型
-    model = MLP_3(embedding_dim=input_size, device=device, dtype=dtype)
+    model = MLP_4(embedding_dim=input_size, device=device, dtype=dtype)
     model.load_state_dict(torch.load("/home/ouyk/project/ICDCS/Oracle/mlp_model.pth"))
     
     # 评估模型
