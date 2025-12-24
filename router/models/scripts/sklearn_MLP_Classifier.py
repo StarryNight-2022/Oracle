@@ -14,7 +14,8 @@ if __name__ == "__main__":
         
     n_classes = config["Data"]["labels"]["num_tokens_range_split"]
     
-    embedding_model = "Qwen3-Embeddings-0.6B"
+    # embedding_model = "Qwen3-Embeddings-0.6B"
+    embedding_model="bert-embedding"
     model_A = "Qwen3-0.6B-temp-0-no-thinking"   # use its embedding as inputs
     model_B = "Qwen3-14B-temp-0-no-thinking"    # use its output_length as lables
     max_tokens = 32768

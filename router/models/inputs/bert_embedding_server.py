@@ -23,7 +23,7 @@ class ErrorResponse(BaseModel):
     error: dict
 
 # 设备配置
-device = torch.device("cuda:1" if torch.cuda.is_available() else "cpu")
+device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
 MODEL_PATH = '/home/ouyk/project/ICDCS/Oracle/model/Fine_Tuned'
 
 # 加载模型和tokenizer

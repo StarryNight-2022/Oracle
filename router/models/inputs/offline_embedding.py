@@ -21,6 +21,7 @@ class offline_embedding():
         self.index_list = index_list
         self.input = input_text
         self.output = output_text
+        print(f"embedding_model: {self.embedding_model}")
         if self.input and not self.output:    
             self.embeddings_dir = os.path.join(config["Data"]["embeddings_dir"], embedding_model, f"{self.benchmark}_input_embeddings.npy")
             if gen:
@@ -42,7 +43,7 @@ class offline_embedding():
             try:
                 self.load_data()
             except:
-                raise FileNotFoundError(f"Please generate the {self.benchmark}_embeddings.npy first!")
+                raise FileNotFoundError(f"Please generate the {self.benchmark}_input_embeddings.npy first!")
         self.access_count = 0
     
     def __iter__(self):
@@ -116,11 +117,14 @@ if __name__ == "__main__":
     
     model_A = "Qwen3-0.6B-temp-0-no-thinking"
     model_B = "Qwen3-14B-temp-0-no-thinking"
-    record = os.path.join(config["Data"]["data_dir"], model_B, "without_outliers.npy")
-    index_list = (np.load(record)).tolist()
+    record_a = os.path.join(config["Data"]["data_dir"], model_A, "without_outliers.npy")
+    record_b = os.path.join(config["Data"]["data_dir"], model_B, "without_outliers.npy")
+    index_list_a = np.load(record_a).tolist()
+    index_list_b = np.load(record_b).tolist()
+    index_list = list(set(index_list_a) & set(index_list_b)) # 取交集
     
     # Generate embeddings with vLLM(生成embeddings数据)
-    tool = offline_embedding(config, index_list, model_A, input_text=True, output_text=False, embedding_model=embedding_model, gen=True)
+    tool = offline_embedding(config, index_list, model_A, input_text=False, output_text=True, embedding_model=embedding_model, gen=True)
     tool.gen_data()
     
     # 获取到在GSM8K数据集上每一条query对应的num_tokens

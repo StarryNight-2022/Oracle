@@ -73,6 +73,9 @@ def train_model(model, train_loader, val_loader, num_epochs=100, learning_rate=0
             print(f'Val Loss: {val_loss_avg:.4f}')
             print(f'Train Acc: {np.mean(train_accs):.4f}')
             print(f'Val Acc: {np.mean(val_accs):.4f}')
+            # 梯度范数
+            grad_norm = sum(p.grad.norm().item() for p in model.parameters() if p.grad is not None)
+            print(f'Grad Norm: {grad_norm:.4f}')
             print('-' * 50)
     
     return train_losses, val_losses
@@ -165,6 +168,6 @@ def main(embedding_model:str):
     plt.savefig('training_curves.png')
     
 if __name__ == '__main__':
-    embedding_model="Qwen3-Embeddings-0.6B"
-    # embedding_model="bert-embedding"
+    # embedding_model="Qwen3-Embeddings-0.6B"
+    embedding_model="bert-embedding"
     main(embedding_model)

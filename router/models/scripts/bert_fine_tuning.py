@@ -109,14 +109,27 @@ def stage1(device:torch.device, dtype:torch.dtype, epochs:int, batch_size:int):
     model.bert.save_pretrained("./model/Fine_Tuned")
     tokenizer.save_pretrained("./model/Fine_Tuned")
 
+    # step 9: Evaluate the model, calculate accuracy
+    acc = 0
+    for data in eval_dataset:
+        inputs = tokenizer(data["prompt"], return_tensors="pt", padding=True, truncation=True, max_length=128)
+        inputs = {k: v.to(device) for k, v in inputs.items()}
+        outputs = model(**inputs)
+        logits = outputs.logits
+        predictions = torch.argmax(logits, dim=-1)
+        if predictions.item() == data["labels"]:
+            acc += 1
+    accuracy = acc / len(eval_dataset)
+    print(f"Evaluation Accuracy: {accuracy * 100:.2f}%")
+        
 if __name__ == "__main__":
-    device = torch.device("cuda:1")
+    device = torch.device("cuda:0")
     dtype = torch.float32
     
     # Bert fine-tune stage
     stage1(device=device,
            dtype=dtype,
-           epochs=3,
+           epochs=10,
            batch_size=8)
 
     # # Downstream classifier training stage
