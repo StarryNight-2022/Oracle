@@ -358,4 +358,21 @@ class MLP_4_Classification(nn.Module):
         x = self.softmax(x) # [batch_size, 16]
         return x
         
+class MLP_5(nn.Module):
+    def __init__(self, embedding_dim:int, device:torch.device, dtype:torch.dtype):
+        super(MLP_5, self).__init__()
+        self.device = device
+        self.dtype = dtype
+        self.embedding_dim = embedding_dim
+        self.fc1 = nn.Linear(in_features=2*self.embedding_dim, out_features=128, device=self.device, dtype=self.dtype) # 1024->128
+        self.fc2 = nn.Linear(in_features=128, out_features=128, device=self.device, dtype=self.dtype) # 128->128
+        self.fc3 = nn.Linear(in_features=128, out_features=1, device=self.device, dtype=self.dtype) # 128->1
+        self.relu = nn.ReLU()
     
+    def forward(self, prompt_embed:torch.Tensor, output_embed:torch.Tensor)->torch.Tensor:
+        x = torch.cat([prompt_embed, output_embed], dim=1) # [batch_size, 2*embedding_dim]
+        x = self.fc1(x) # [batch_size, 2*embedding_dim] -> [batch_size, 128]
+        x = self.fc2(x) # hidden_layer: [batch_size, 128] -> [batch_size, 128]
+        x = self.fc3(x) # [batch_size, 128] -> [batch_size, 1]
+        x = self.relu(x) # [batch_size, 1]
+        return x
