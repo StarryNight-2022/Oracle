@@ -14,7 +14,7 @@ class cleaner():
         self.num_data = num_data
         self.key = key
         
-        self.data_lists:List[Tuple[int, int]] = []
+        self.data_lists:List[Tuple[int, Any]] = []
         self.load_datasets()
     
     def load_datasets(self):
@@ -78,7 +78,7 @@ if __name__ == "__main__":
     # 获取到在GSM8K数据集上每一条query对应的num_tokens，针对"length_of_output_token_ids"进行过滤
     for model in model_name_list:
         tool = cleaner(data_dir, num_data, model, key="length_of_output_token_ids")
-        tool.remove(threshold=700)
+        tool.remove(threshold=500)
         
         # # 获取到在GSM8K数据集上每一条query对应的num_tokens，针对runtime进行过滤
         # tool = cleaner(data_dir, num_data, model, key="runtime")

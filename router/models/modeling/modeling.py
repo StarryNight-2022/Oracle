@@ -11,8 +11,10 @@ import torch.nn as nn
 from safetensors.torch import load_file
 #------------------ Transformers ------------------
 from transformers import BertModel, AutoTokenizer
+from router.models.modeling.Qwen3.modeling_qwen3 import Qwen3Model
 #--------------------------------------------------
 from router.models.router.config import MODEL_IDS
+from typing import Dict
 
 class KNN():
     def __init__(self, checkpoint:str):
@@ -131,6 +133,60 @@ class Bert(nn.Module):
         pooled_output = bert_outputs[1]
 
         return pooled_output
+
+def last_token_pool(last_hidden_states: torch.Tensor,
+                 attention_mask: torch.Tensor) -> torch.Tensor:
+    left_padding = (attention_mask[:, -1].sum() == attention_mask.shape[0])
+    if left_padding:
+        return last_hidden_states[:, -1]
+    else:
+        sequence_lengths = attention_mask.sum(dim=1) - 1
+        batch_size = last_hidden_states.shape[0]
+        return last_hidden_states[torch.arange(batch_size, device=last_hidden_states.device), sequence_lengths]
+
+class Qwen3_Embedding(nn.Module):
+    def __init__(self, 
+                 weight_dir:str, 
+                 device:torch.device,
+                 max_length:int = 8192):
+        super(Qwen3_Embedding, self).__init__()
+        self.device = device
+        self.max_length = max_length
+        self.tokenizer = AutoTokenizer.from_pretrained(
+            "/home/ouyk/project/Runtime/Model/Qwen3-Embedding-0.6B"
+        )
+        # 预训练的Bert模型
+        self.llm = Qwen3Model.from_pretrained(
+            weight_dir,
+        ).to(self.device)
+        self.llm.eval()
+        
+    def forward(self, prompt:str):
+        inputs = self.tokenizer(
+            prompt,
+            padding=True,
+            truncation=True,
+            max_length=self.max_length,
+            return_tensors="pt",
+        )
+            
+        inputs.to(self.device)
+        mask = inputs['attention_mask']
+        
+        # NOTE: middle_hidden_state包括着每个decoder_layer的激活输出
+        outputs, middle_hidden_state = self.llm(**inputs)
+        # NOTE:这样只提取了最后一个模型层的hidden_state中最后一个token的embedding vector
+        embedding = last_token_pool(outputs.last_hidden_state, mask)
+        
+        embedding_dict:Dict[str, torch.Tensor] = {}
+        
+        for key in list(middle_hidden_state.keys()):
+            middle_embed = last_token_pool(middle_hidden_state[key], mask)
+            embedding_dict["middle_"+key] = middle_embed.detach().cpu().numpy()
+            
+        embedding_dict["last"] = embedding.detach().cpu().numpy()
+
+        return embedding_dict
 
 # TODO: 为了适应动态的输入模型数量，需要对此模型结构进行修改。
 class MFModel(torch.nn.Module):

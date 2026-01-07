@@ -31,7 +31,7 @@ data_require_template = {
     "latency_label_b": data_choice.No_Need,
 }
 
-def prepare_training_data(config:Dict, index_list:List[int], model_A:str, model_B:str, embedding_model:str, data_require:Dict[str, bool], lable_strategy:int) -> Tuple[Dict[str, np.ndarray], Dict, Dict]:
+def prepare_training_data(config:Dict, index_list:List[int], model_A:str, model_B:str, embedding_model:str, data_require:Dict[str, data_choice], lable_strategy:int) -> Tuple[Dict[str, np.ndarray], Dict, Dict]:
     x = {}
     y = {}
     range_dict = {}
@@ -171,8 +171,8 @@ def train_test_split(X: Dict[str, np.ndarray], y: np.ndarray, test_ratio: float 
 def gen_fine_tuning_data(config:Dict, index_list:List[int], model_A:str, model_B:str, lable_strategy:int, test_ratio:float, save_dir:str):
     # List[List[str, int]]
     query = []
-    train_samples: List[List[str, int]] = []
-    test_samples: List[List[str, int]] = []
+    train_samples: List[Tuple[str, int]] = []
+    test_samples: List[Tuple[str, int]] = []
     
     # input: 模型A的prompts
     for data in queries(config, index_list, model_A):
@@ -202,10 +202,10 @@ def gen_fine_tuning_data(config:Dict, index_list:List[int], model_A:str, model_B
     test_indices = indices[:n_test]
     
     for idx in train_indices:
-        train_samples.append([query[idx], labels[idx]])
+        train_samples.append((query[idx], labels[idx]))
         
     for idx in test_indices:
-        test_samples.append([query[idx], labels[idx]])
+        test_samples.append((query[idx], labels[idx]))
     
     # 保存为npy文件
     np.save(os.path.join(save_dir ,'train_data.npy'), np.array(train_samples, dtype=object))

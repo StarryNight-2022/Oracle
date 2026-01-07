@@ -32,3 +32,5 @@ logs/*
 *.safetensores
 *.ckpt
 *.joblib
+*.jsonl
+*.txt
